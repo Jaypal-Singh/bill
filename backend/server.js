@@ -14,11 +14,12 @@ connectDB();
 
 // Middleware
 app.use(cors({
-    origin: 'https://bill-two-ochre.vercel.app',
+    origin: ['https://bill-two-ochre.vercel.app', 'https://bill-xbv3.vercel.app'], // Add both just in case!
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Routes
