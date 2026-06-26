@@ -28,9 +28,15 @@ const Dashboard = () => {
   const fetchCustomers = async (ownerId) => {
     try {
       const { data } = await api.get(`/customers?ownerId=${ownerId}`);
-      setCustomers(data);
+      if (Array.isArray(data)) {
+        setCustomers(data);
+      } else {
+        console.error('API did not return an array. Check VITE_URL!', data);
+        setCustomers([]);
+      }
     } catch (err) {
       console.error('Failed to fetch customers:', err);
+      setCustomers([]);
     }
   };
 
