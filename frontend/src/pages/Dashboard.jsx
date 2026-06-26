@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [newCustomer, setNewCustomer] = useState({ id: '', name: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isListLoading, setIsListLoading] = useState(true);
   
   const navigate = useNavigate();
 
@@ -26,6 +27,7 @@ const Dashboard = () => {
   }, [navigate]);
 
   const fetchCustomers = async (ownerId) => {
+    setIsListLoading(true);
     try {
       const { data } = await api.get(`/customers?ownerId=${ownerId}`);
       if (Array.isArray(data)) {
@@ -37,6 +39,8 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Failed to fetch customers:', err);
       setCustomers([]);
+    } finally {
+      setIsListLoading(false);
     }
   };
 
@@ -169,7 +173,24 @@ const Dashboard = () => {
 
         {/* Optimized List View */}
         <div className="space-y-4">
-          {customers.length === 0 ? (
+          {isListLoading ? (
+            // Skeleton Loader
+            [1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-start mb-2 relative z-10">
+                  <div>
+                    <div className="w-32 h-4 bg-slate-800 rounded animate-pulse"></div>
+                    <div className="w-20 h-3 bg-slate-800/50 rounded mt-2 animate-pulse"></div>
+                  </div>
+                  <div className="w-16 h-5 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-800 relative z-10">
+                  <div className="w-16 h-3 bg-slate-800 rounded animate-pulse"></div>
+                  <div className="w-12 h-4 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))
+          ) : customers.length === 0 ? (
             <div className="text-center py-10 text-slate-500">
               <span className="material-symbols-outlined text-4xl mb-2">person_off</span>
               <p>No customers found. Add one below!</p>

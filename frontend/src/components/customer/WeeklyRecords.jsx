@@ -94,10 +94,40 @@ const WeeklyRecords = ({ customer }) => {
 
       {/* Exits List */}
       <div className="space-y-3 pb-4">
-        {isLoading && <div className="text-center text-slate-500 py-10">Loading past trades...</div>}
-        {error && <div className="text-center text-rose-400 py-10">{error}</div>}
-        
-        {!isLoading && !error && exits.length === 0 && (
+        {isLoading ? (
+          // Skeleton Loader
+          [1, 2, 3].map((i) => (
+            <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 relative overflow-hidden">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div className="w-16 h-5 bg-slate-800 rounded animate-pulse"></div>
+                    <div className="w-8 h-4 bg-slate-800 rounded animate-pulse"></div>
+                  </div>
+                  <div className="w-20 h-3 bg-slate-800 rounded mt-2 animate-pulse"></div>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <div className="w-16 h-5 bg-slate-800 rounded animate-pulse mb-1"></div>
+                  <div className="w-24 h-3 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800">
+                <div>
+                   <div className="w-8 h-2 bg-slate-800 rounded animate-pulse mb-1"></div>
+                   <div className="w-12 h-3 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+                <div>
+                   <div className="w-12 h-2 bg-slate-800 rounded animate-pulse mb-1"></div>
+                   <div className="w-16 h-3 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+                <div className="flex flex-col items-end">
+                   <div className="w-12 h-2 bg-slate-800 rounded animate-pulse mb-1"></div>
+                   <div className="w-16 h-3 bg-slate-800 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : !error && exits.length === 0 && (
           <div className="text-center py-10 text-slate-500 border border-dashed border-slate-800 rounded-xl">
             <span className="material-symbols-outlined text-4xl mb-2 text-slate-700">history</span>
             <p>No past trades found.</p>
