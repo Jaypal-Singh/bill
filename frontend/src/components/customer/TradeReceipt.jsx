@@ -3,9 +3,35 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { UserCircle2, ShieldCheck, TrendingUp, FileText } from 'lucide-react';
 
-const TradeReceipt = ({ trade, customer, type, onClose }) => {
+const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
   const receiptRef = useRef(null);
   const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (trade && !isEditing) {
+      setEditData({
+        quantity: trade.quantity || '',
+        lot: trade.lot || '',
+        price: type === 'exit' ? trade.price : (trade.entryPrice || trade.price || ''),
+        ltp: type === 'exit' ? trade.ltp : (trade.ltp || ''),
+        marginRs: trade.marginRs || '',
+        brokeragePct: trade.brokeragePct || ''
+      });
+    }
+  }, [trade, isEditing, type]);
+
+  const handleSave = async () => {
+    if (onEdit) {
+      setIsSaving(true);
+      await onEdit(editData);
+      setIsSaving(false);
+      setIsEditing(false);
+    }
+  };
 
   // Close on Escape key
   useEffect(() => {
@@ -51,7 +77,10 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
       });
 
       pdf.addImage(dataUrl, 'PNG', 0, 0, receiptRef.current.offsetWidth, receiptRef.current.offsetHeight);
-      pdf.save(`${customer.name}_${trade.symbol}_${type}_Receipt.pdf`);
+      const today = new Date();
+      const formattedDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear().toString().slice(-2)}`;
+      const safeCustomerName = (customer.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+      pdf.save(`${safeCustomerName}_${formattedDate}.pdf`);
     } catch (error) {
       console.error('Failed to generate receipt PDF:', error);
       alert('Error generating PDF: ' + error.message);
@@ -92,7 +121,7 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
       <div className="fixed inset-0 min-h-screen print-hide" onClick={onClose}></div>
       <div className="relative z-10 w-full max-w-[700px] my-8 flex flex-col items-center receipt-print-area">
         {/* Theme Toggle (Ignored in screenshot) */}
-        <div className="flex gap-2 mb-4 bg-slate-900 p-1.5 rounded-full border border-slate-700 shadow-lg print-hide" data-html2canvas-ignore>
+        <div className="flex gap-2 mb-2 bg-slate-900 p-1.5 rounded-full border border-slate-700 shadow-lg print-hide" data-html2canvas-ignore>
           <button 
             onClick={() => setTheme('light')}
             className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${theme === 'light' ? 'bg-white text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'}`}
@@ -127,7 +156,7 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
                     J D BROKERAGE PVT. LTD.
                   </h1>
                   <h2 className={`text-xs font-semibold tracking-widest uppercase ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                    TRADE {type.toUpperCase()} RECEIPT
+                    {type.toUpperCase()}
                   </h2>
                 </div>
               </div>
@@ -149,7 +178,7 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Quantity</div>
+                <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Qty</div>
                 <span className={`text-l font-bold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{trade.quantity}</span>
               </div>
             </div>
@@ -191,37 +220,62 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
                 <h4 className="text-white text-xs font-bold tracking-wider uppercase">DETAILS</h4>
               </div>
               <div className="px-3 py-3 space-y-3">
+                {!isEditing && (
+                  <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Mode</span>
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{productType}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Product Type</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{productType}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Quantity</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{trade.quantity}</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Qty (Lot)</span>
+                  {isEditing ? (
+                    <div className="flex gap-2">
+                      <input type="number" className="w-16 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.quantity} onChange={e => setEditData({...editData, quantity: e.target.value})} placeholder="Qty" />
+                      <input type="number" className="w-16 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.lot} onChange={e => setEditData({...editData, lot: e.target.value})} placeholder="Lot" />
+                    </div>
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {trade.quantity} {trade.lot ? `(${trade.lot})` : ''}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isShortExit ? 'Sell Price' : 'Buy Price'}</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(isExit ? trade.price : (trade.entryPrice || 0))}</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(isExit ? trade.price : (trade.entryPrice || 0))}</span>
+                  )}
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isShortExit ? 'Total Selling' : 'Total Buying'}</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency((isExit ? trade.price : (trade.entryPrice || 0)) * trade.quantity)}</span>
-                </div>
+                {!isEditing && (
+                  <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isShortExit ? 'Invested' : 'Invested'}</span>
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency((isExit ? trade.price : (trade.entryPrice || 0)) * trade.quantity)}</span>
+                  </div>
+                )}
                 
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Exit Price</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(isExit ? trade.ltp : trade.price)}</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.ltp} onChange={e => setEditData({...editData, ltp: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(isExit ? trade.ltp : trade.price)}</span>
+                  )}
                 </div>
 
-                {(parseFloat(trade.marginRs) > 0) && (
+                {(isEditing || parseFloat(trade.marginRs) > 0) && (
                   <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Margin</span>
-                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(trade.marginRs)}</span>
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Money Margin</span>
+                    {isEditing ? (
+                      <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.marginRs} onChange={e => setEditData({...editData, marginRs: e.target.value})} />
+                    ) : (
+                      <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(trade.marginRs)}</span>
+                    )}
                   </div>
                 )}
 
-                {trade.realizedPnl !== undefined && (
+                {!isEditing && trade.realizedPnl !== undefined && (
                   <div className="flex justify-between items-center pt-1">
                     <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Realised P&L</span>
                     <span className={`text-sm font-bold ${trade.realizedPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -233,7 +287,7 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
             </div>
 
             {/* Total P&L Footer */}
-            {trade.realizedPnl !== undefined && (
+            {!isEditing && trade.realizedPnl !== undefined && (
               <div className={`mt-4 p-4 rounded-xl border flex justify-between items-center ${
                 trade.realizedPnl >= 0 
                   ? (theme === 'dark' ? 'bg-emerald-950/30 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200')
@@ -268,6 +322,25 @@ const TradeReceipt = ({ trade, customer, type, onClose }) => {
           >
             CLOSE
           </button>
+          {onEdit && !isEditing && (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-slate-800 bg-emerald-400 hover:bg-emerald-300 transition-colors shadow-lg shadow-emerald-500/20"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              EDIT
+            </button>
+          )}
+          {isEditing && (
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white bg-green-600 hover:bg-green-500 transition-colors shadow-lg shadow-green-600/20"
+            >
+              <span className="material-symbols-outlined text-[18px]">save</span>
+              {isSaving ? 'SAVING...' : 'SAVE'}
+            </button>
+          )}
           <button 
             onClick={handleDownload}
             className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20"

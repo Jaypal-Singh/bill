@@ -206,7 +206,10 @@ export default function Invoice() {
                 heightLeft -= pdfHeight;
             }
 
-            pdf.save(`Invoice_${clientName || customerId}_${new Date().toISOString().split('T')[0]}.pdf`);
+            const today = new Date();
+            const formattedDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear().toString().slice(-2)}`;
+            const safeClientName = (clientName || customerId || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+            pdf.save(`${safeClientName}_${formattedDate}.pdf`);
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert(`Failed: ${error.message}`);
@@ -329,7 +332,7 @@ export default function Invoice() {
                             <tr>
                                 <th className="px-4 py-3 rounded-l-lg">Date</th>
                                 <th className="px-4 py-3">Symbol</th>
-                                <th className="px-4 py-3 text-right">Qty</th>
+                                <th className="px-4 py-3 text-right">Qty (Lot)</th>
                                 <th className="px-4 py-3 text-right">Buy Avg</th>
                                 <th className="px-4 py-3 text-right">Sell Avg</th>
                                 <th className="px-4 py-3 text-right">Brokerage</th>
@@ -347,7 +350,7 @@ export default function Invoice() {
                                         </span>
                                     </td>
 
-                                    <td className="px-4 py-3 text-right text-[#374151]">{item.qty}</td>
+                                    <td className="px-4 py-3 text-right text-[#374151]">{item.qty} {item.lot ? `(${item.lot})` : ''}</td>
                                     <td className="px-4 py-3 text-right text-[#374151]">{item.buyAvg.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-right text-[#374151]">{item.sellAvg.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-right text-[#374151]">{money(item.totalBrokerage)}</td>
@@ -377,7 +380,7 @@ export default function Invoice() {
                         {/* Display Margin if entered */}
                         {margin && (
                             <div className="flex justify-between text-[#4b5563]">
-                                <span>Margin Used</span>
+                                <span>Money Margin Used</span>
                                 <span>{money(margin)}</span>
                             </div>
                         )}

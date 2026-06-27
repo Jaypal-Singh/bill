@@ -14,7 +14,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-    origin: ['https://bill-two-ochre.vercel.app', 'https://bill-xbv3.vercel.app', 'http://localhost:5173/', 'https://myntra-gcho.onrender.com'], // Add both just in case!
+    origin: ['https://bill-two-ochre.vercel.app', 'https://bill-xbv3.vercel.app', 'http://localhost:5173', 'https://myntra-gcho.onrender.com'], // Add both just in case!
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']

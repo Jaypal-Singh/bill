@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import api from '../../../services/api';
 import TradeReceipt from '../TradeReceipt';
 
-const EntryForm = ({ formatCurrency, customer }) => {
+const EntryForm = ({ formatCurrency, customer, editingTradeData, setEditingTradeData }) => {
   const [symbol, setSymbol] = useState('');
   const [action, setAction] = useState('buy'); // 'buy' or 'sell'
   const [quantity, setQuantity] = useState('');
+  const [lot, setLot] = useState('');
   const [price, setPrice] = useState('');
   const [ltp, setLtp] = useState('');
   const [marginRs, setMarginRs] = useState('');
@@ -14,8 +15,27 @@ const EntryForm = ({ formatCurrency, customer }) => {
   const [brokerage, setBrokerage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  React.useEffect(() => {
+    if (editingTradeData && editingTradeData.type === 'entry') {
+      setEditingId(editingTradeData._id || null);
+      setSymbol(editingTradeData.symbol || '');
+      setAction(editingTradeData.action || 'buy');
+      setQuantity(editingTradeData.quantity || '');
+      setLot(editingTradeData.lot || '');
+      setPrice(editingTradeData.price || editingTradeData.avgCost || '');
+      setLtp(editingTradeData.ltp || editingTradeData.lastPrice || '');
+      setMarginRs(editingTradeData.marginRs || '');
+      setMarginPct(editingTradeData.marginPct || '');
+      if (editingTradeData.date) {
+        try { setDate(new Date(editingTradeData.date).toISOString().split('T')[0]); } catch(e) {}
+      }
+      setBrokerage(editingTradeData.brokeragePct || '');
+    }
+  }, [editingTradeData]);
 
   // Calculations
   const qtyNum = parseFloat(quantity) || 0;
@@ -44,6 +64,7 @@ const EntryForm = ({ formatCurrency, customer }) => {
         action: action,
         symbol: symbol,
         quantity: qtyNum,
+        lot: parseFloat(lot) || 0,
         price: priceNum,
         ltp: parseFloat(ltp) || 0,
         marginRs: parseFloat(marginRs) || 0,
@@ -52,12 +73,23 @@ const EntryForm = ({ formatCurrency, customer }) => {
         brokeragePct: activeBrokeragePct
       };
 
-      const res = await api.post('/trades', payload);
-      showToast(`Successfully saved ENTRY ${action.toUpperCase()} for ${qtyNum} ${symbol}`, 'success');
+      let savedData;
+      if (editingId) {
+        const res = await api.put(`/trades/${editingId}`, payload);
+        showToast(`Successfully updated ENTRY ${action.toUpperCase()} for ${qtyNum} ${symbol}`, 'success');
+        savedData = res.data;
+      } else {
+        const res = await api.post('/trades', payload);
+        showToast(`Successfully saved ENTRY ${action.toUpperCase()} for ${qtyNum} ${symbol}`, 'success');
+        savedData = res.data;
+      }
 
-      // Reset form
+      // Reset form on success
+      setEditingId(null);
+      if (setEditingTradeData) setEditingTradeData(null);
       setSymbol('');
       setQuantity('');
+      setLot('');
       setPrice('');
       setLtp('');
       setMarginRs('');
@@ -70,6 +102,40 @@ const EntryForm = ({ formatCurrency, customer }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditReceipt = () => {
+    if (receiptData) {
+      setEditingId(receiptData._id);
+      setSymbol(receiptData.symbol);
+      setAction(receiptData.action || 'buy');
+      setQuantity(receiptData.quantity.toString());
+      setLot((receiptData.lot || '').toString());
+      setPrice((receiptData.price || receiptData.entryPrice || '').toString());
+      setLtp((receiptData.ltp || '').toString());
+      setMarginRs((receiptData.marginRs || '').toString());
+      setMarginPct((receiptData.marginPct || '').toString());
+      if (receiptData.date) {
+        setDate(new Date(receiptData.date).toISOString().split('T')[0]);
+      }
+      setBrokerage((receiptData.brokeragePct || '').toString());
+      setReceiptData(null);
+    }
+  };
+
+  const handleCloseReceipt = () => {
+    setReceiptData(null);
+    // Reset form
+    setEditingId(null);
+    setSymbol('');
+    setQuantity('');
+    setLot('');
+    setPrice('');
+    setLtp('');
+    setMarginRs('');
+    setMarginPct('');
+    setDate('');
+    setBrokerage('');
   };
 
   return (
@@ -135,7 +201,7 @@ const EntryForm = ({ formatCurrency, customer }) => {
       {/* Quantity & Price & LTP */}
       <div className="flex gap-4 mb-5">
         <div className="flex-[0.8]">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Qty</label>
           <input 
             type="number" 
             required
@@ -146,8 +212,19 @@ const EntryForm = ({ formatCurrency, customer }) => {
             className="w-full bg-slate-950 border border-slate-800 rounded-lg py-3 px-4 text-sm font-mono text-slate-200 placeholder:text-slate-600 focus:border-blue-500 outline-none transition-all"
           />
         </div>
+        <div className="flex-[0.8]">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Lot</label>
+          <input 
+            type="number" 
+            min="0"
+            value={lot}
+            onChange={e => setLot(e.target.value)}
+            placeholder="0"
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg py-3 px-4 text-sm font-mono text-slate-200 placeholder:text-slate-600 focus:border-blue-500 outline-none transition-all"
+          />
+        </div>
         <div className="flex-1">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Price (Buy/Sell)</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Price</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">₹</span>
             <input 
@@ -183,7 +260,7 @@ const EntryForm = ({ formatCurrency, customer }) => {
       {/* Margin */}
       <div className="flex gap-4 mb-5">
         <div className="flex-1">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Margin (₹)</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Money Margin (₹)</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">₹</span>
             <input 
@@ -196,7 +273,7 @@ const EntryForm = ({ formatCurrency, customer }) => {
           </div>
         </div>
         <div className="flex-1">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Margin (%)</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Money Margin (%)</label>
           <div className="relative">
             <input 
               type="number" 
@@ -265,7 +342,7 @@ const EntryForm = ({ formatCurrency, customer }) => {
         ) : (
           <span className="material-symbols-outlined text-[20px]">save</span>
         )}
-        {isSubmitting ? 'SAVING...' : 'SAVE ENTRY RECORD'}
+        {isSubmitting ? 'SAVING...' : (editingId ? 'UPDATE ENTRY RECORD' : 'SAVE ENTRY RECORD')}
       </button>
       </form>
     </div>

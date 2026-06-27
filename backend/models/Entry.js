@@ -19,6 +19,10 @@ const entrySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  lot: {
+    type: Number,
+    default: 0,
+  },
   price: {
     type: Number,
     required: true,
@@ -50,6 +54,15 @@ const entrySchema = new mongoose.Schema({
   estimatedTotal: {
     type: Number,
     required: true,
+  },
+  customInvested: {
+    type: Number
+  },
+  customUpnl: {
+    type: Number
+  },
+  customTotalPnl: {
+    type: Number
   }
 }, {
   timestamps: true,

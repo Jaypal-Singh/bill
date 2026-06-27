@@ -3,9 +3,46 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { UserCircle2, ShieldCheck, TrendingUp, FileText } from 'lucide-react';
 
-const HoldingReceipt = ({ customer, holding, onClose }) => {
+const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
   const receiptRef = useRef(null);
   const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (holding && !isEditing) {
+      setEditData({
+        quantity: holding.netQty || 0,
+        lot: holding.lot || '',
+        price: holding.avgCost || 0,
+        ltp: holding.lastPrice || 0,
+        marginRs: holding.totalMargin || 0,
+        brokerageFee: holding.totalBrokerage || 0
+      });
+    }
+  }, [holding, isEditing]);
+
+  const displayQty = isEditing ? (parseFloat(editData.quantity) || 0) : (holding.netQty || 0);
+  const displayPrice = isEditing ? (parseFloat(editData.price) || 0) : (holding.avgCost || 0);
+  const displayLtp = isEditing ? (parseFloat(editData.ltp) || 0) : (holding.lastPrice || 0);
+  const displayMargin = isEditing ? (parseFloat(editData.marginRs) || 0) : (holding.totalMargin || 0);
+  const displayBrokerage = isEditing ? (parseFloat(editData.brokerageFee) || 0) : (holding.totalBrokerage || 0);
+  
+  const displayInvested = holding.customInvested !== undefined ? holding.customInvested : holding.totalInvestment;
+  const displayUnrealisedPnl = holding.customUpnl !== undefined ? holding.customUpnl : holding.upnl + (holding.totalBrokerage || 0);
+  const displayTotalPnl = holding.customTotalPnl !== undefined ? holding.customTotalPnl : holding.totalPnl || holding.upnl;
+  const isBuy = holding.type.toLowerCase() === 'buy';
+
+  const handleSave = async () => {
+    if (onEdit) {
+      setIsSaving(true);
+      await onEdit(editData);
+      setIsSaving(false);
+      setIsEditing(false);
+    }
+  };
 
   // Close on Escape key
   useEffect(() => {
@@ -50,23 +87,38 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
       });
       
       pdf.addImage(dataUrl, 'PNG', 0, 0, receiptRef.current.offsetWidth, receiptRef.current.offsetHeight);
-      pdf.save(`${customer.name}_${holding.symbol}_HoldingReceipt.pdf`);
+      const today = new Date();
+      const formattedDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear().toString().slice(-2)}`;
+      const safeCustomerName = (customer.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+      pdf.save(`${safeCustomerName}_${formattedDate}.pdf`);
     } catch (error) {
       console.error('Failed to generate receipt PDF:', error);
       alert('Error generating PDF: ' + error.message);
     }
   };
 
-  const isBuy = holding.type === 'Buy';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center  bg-slate-950/90 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto">
       {/* Background clickable area to close */}
       <div className="fixed inset-0 min-h-screen print-hide" onClick={onClose}></div>
       
-      <div className="relative z-10 w-full max-w-[700px] mt-10 flex flex-col items-center receipt-print-area">
+      <div className="relative z-10 w-full max-w-[700px] mt-2 flex flex-col items-center receipt-print-area">
         {/* Theme Toggle */}
-       
+          <div className="flex gap-2 w-fit  mb-2 bg-slate-900 p-1.5 rounded-full border border-slate-700 shadow-lg print-hide justify-center">
+          <button   
+            onClick={() => setTheme('light')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${theme === 'light' ? 'bg-white text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            LIGHT
+          </button>
+          <button 
+            onClick={() => setTheme('dark')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${theme === 'dark' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            DARK
+          </button>
+        </div>
 
         {/* Receipt Container */}
         <div 
@@ -78,6 +130,7 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
           }`}
           style={{ fontFamily: "'Inter', sans-serif" }}
         >
+           
           <div className="p-3 sm:p-3">
             {/* Header */}
             <div className={`flex justify-between items-center pb-3 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
@@ -88,7 +141,7 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
                     J D BROKERAGE PVT. LTD.
                   </h1>
                   <h2 className={`text-xs font-semibold tracking-widest uppercase ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                    ENTRY RECEIPT
+                    entry
                   </h2>
                 </div>
               </div>
@@ -109,8 +162,8 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Quantity</div>
-                <span className={`text-l font-bold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{holding.netQty}</span>
+                <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Qty</div>
+                <span className={`text-l font-bold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{displayQty} {holding.lot || editData.lot ? `(${isEditing ? editData.lot : holding.lot})` : ''}</span>
               </div>
             </div>
 
@@ -135,7 +188,7 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
               </div>
               <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                  AVG. COST
+                  Avg
                 </div>
                 <div className={`text-[15px] font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                   {formatCurrency(holding.avgCost)}
@@ -149,58 +202,89 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
                 <h4 className="text-white text-xs font-bold tracking-wider uppercase">DETAILS</h4>
               </div>
               <div className="px-3  py-3 space-y-3">
+                {!isEditing && (
+                  <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Mode</span>
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{holding.type.toUpperCase()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Product Type</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{holding.type.toUpperCase()}</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Qty (Lot)</span>
+                  {isEditing ? (
+                    <div className="flex gap-2">
+                      <input type="number" className="w-16 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.quantity} onChange={e => setEditData({...editData, quantity: e.target.value})} placeholder="Qty" />
+                      <input type="number" className="w-16 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.lot} onChange={e => setEditData({...editData, lot: e.target.value})} placeholder="Lot" />
+                    </div>
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{displayQty} {holding.lot ? `(${holding.lot})` : ''}</span>
+                  )}
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Quantity</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{holding.netQty}</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Buy Price</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.avgCost)}</span>
+                  )}
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isBuy ? 'Buy Price' : 'Sell Price'}</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.avgCost)}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isBuy ? 'Total Buying' : 'Total Selling'}</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalInvestment)}</span>
-                </div>
+                {!isEditing && (
+                  <div className="flex justify-between items-center pb-2border-b border-dashed border-slate-200 dark:border-slate-800">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isBuy ? 'Invested' : 'Invested'}</span>
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(displayInvested)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>LTP</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.lastPrice)}</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.ltp} onChange={e => setEditData({...editData, ltp: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.lastPrice)}</span>
+                  )}
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Margin</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalMargin || 0)}</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Money Margin</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.marginRs} onChange={e => setEditData({...editData, marginRs: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalMargin || 0)}</span>
+                  )}
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Brokerage</span>
-                  <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalBrokerage || 0)}</span>
+                  {isEditing ? (
+                    <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.brokerageFee} onChange={e => setEditData({...editData, brokerageFee: e.target.value})} />
+                  ) : (
+                    <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalBrokerage || 0)}</span>
+                  )}
                 </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Unrealised P&L</span>
-                  <span className={`text-sm font-bold ${(holding.upnl + (holding.totalBrokerage || 0)) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {((holding.upnl + (holding.totalBrokerage || 0)) >= 0 ? '+' : '')}{formatCurrency(holding.upnl + (holding.totalBrokerage || 0))}
-                  </span>
-                </div>
+                {!isEditing && (
+                  <div className="flex justify-between items-center pt-1">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Unrealised P&L</span>
+                    <span className={`text-sm font-bold ${displayUnrealisedPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {(displayUnrealisedPnl >= 0 ? '+' : '')}{formatCurrency(displayUnrealisedPnl)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Total P&L Footer */}
-            <div className={`mt-4 p-4 rounded-xl border flex justify-between items-center ${
-              holding.upnl >= 0 
-                ? (theme === 'dark' ? 'bg-emerald-950/30 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200')
-                : (theme === 'dark' ? 'bg-rose-950/30 border-rose-900/50' : 'bg-rose-50 border-rose-200')
-            }`}>
-              <span className={`text-xs font-bold uppercase tracking-wider ${
-                holding.upnl >= 0 
-                  ? (theme === 'dark' ? 'text-emerald-400/80' : 'text-emerald-700/80')
-                  : (theme === 'dark' ? 'text-rose-400/80' : 'text-rose-700/80')
-              }`}>TOTAL P/L</span>
-              <span className={`text-xl font-black tracking-tight ${holding.upnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {holding.upnl >= 0 ? '+' : ''}{formatCurrency(holding.upnl)}
-              </span>
-            </div>
+            {!isEditing && (
+              <div className={`mt-4 p-4 rounded-xl border flex justify-between items-center ${
+                displayTotalPnl >= 0 
+                  ? (theme === 'dark' ? 'bg-emerald-950/30 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200')
+                  : (theme === 'dark' ? 'bg-rose-950/30 border-rose-900/50' : 'bg-rose-50 border-rose-200')
+              }`}>
+                <span className={`text-xs font-bold uppercase tracking-wider ${
+                  displayTotalPnl >= 0 
+                    ? (theme === 'dark' ? 'text-emerald-400/80' : 'text-emerald-700/80')
+                    : (theme === 'dark' ? 'text-rose-400/80' : 'text-rose-700/80')
+                }`}>TOTAL P/L</span>
+                <span className={`text-xl font-black tracking-tight ${displayTotalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {displayTotalPnl >= 0 ? '+' : ''}{formatCurrency(displayTotalPnl)}
+                </span>
+              </div>
+            )}
 
             {/* Footer stamp */}
             <div className="mt-3 mb-1 flex flex-col items-center justify-center">
@@ -221,25 +305,29 @@ const HoldingReceipt = ({ customer, holding, onClose }) => {
           >
             CLOSE
           </button>
-           <div className="flex gap-2 mb-4 bg-slate-900 p-1.5 rounded-full border border-slate-700 shadow-lg print-hide">
-          <button 
-            onClick={() => setTheme('light')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${theme === 'light' ? 'bg-white text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            LIGHT
-          </button>
-          <button 
-            onClick={() => setTheme('dark')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${theme === 'dark' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            DARK
-          </button>
-        </div>
+          {onEdit && !isEditing && (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-slate-800 bg-emerald-400 hover:bg-emerald-300 transition-colors shadow-lg shadow-emerald-500/20"
+            >
+              EDIT
+            </button>
+          )}
+          {isEditing && (
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white bg-green-600 hover:bg-green-500 transition-colors shadow-lg shadow-green-600/20"
+            >
+              {isSaving ? 'SAVING...' : 'SAVE'}
+            </button>
+          )}
+          
           <button 
             onClick={handleDownload}
             className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20"
           >
-            <FileText size={14} />
+           
             SAVE PDF
           </button>
           

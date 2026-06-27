@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }) => {
 
 import CustomerDetail from './pages/CustomerDetail';
 import Invoice from './components/customer/Invoice';
+import AccountOpeningForm from './pages/AccountOpeningForm';
 
 const AppRoutes = () => {
   return (
@@ -23,6 +24,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/account-opening" 
+        element={
+          <ProtectedRoute>
+            <AccountOpeningForm />
           </ProtectedRoute>
         } 
       />

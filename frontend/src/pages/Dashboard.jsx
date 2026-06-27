@@ -139,9 +139,14 @@ const Dashboard = () => {
             <path d="m9 12 2 2 4-4"/>
           </svg>
         </div>
-        <button onClick={handleLogout} className="text-slate-400 p-2 rounded hover:bg-slate-800 hover:text-white transition-colors" title="Menu / Logout">
-          <span className="material-symbols-outlined text-[24px]">menu</span>
-        </button>
+        <div className="flex gap-3 items-center">
+          <button onClick={() => navigate('/account-opening')} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
+            <span className="material-symbols-outlined text-[18px]">description</span> Form
+          </button>
+          <button onClick={handleLogout} className="text-slate-400 p-2 rounded hover:bg-slate-800 hover:text-red-400 transition-colors" title="Logout">
+            <span className="material-symbols-outlined text-[24px]">logout</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}

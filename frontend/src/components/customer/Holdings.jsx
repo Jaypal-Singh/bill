@@ -2,12 +2,20 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import HoldingReceipt from './HoldingReceipt';
 
-const Holdings = ({ customer }) => {
+const Holdings = ({ customer, onEditRequest }) => {
   const [holdings, setHoldings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [selectedSymbols, setSelectedSymbols] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     fetchHoldings();
@@ -33,7 +41,32 @@ const Holdings = ({ customer }) => {
       fetchHoldings();
     } catch (err) {
       console.error(err);
-      alert('Failed to delete holding');
+      showToast('Failed to delete holding');
+    }
+  };
+
+  const toggleSelection = (symbol) => {
+    setSelectedSymbols(prev => prev.includes(symbol) ? prev.filter(s => s !== symbol) : [...prev, symbol]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedSymbols.length === holdings.length && holdings.length > 0) {
+      setSelectedSymbols([]);
+    } else {
+      setSelectedSymbols(holdings.map(h => h.symbol));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedSymbols.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete holdings for ${selectedSymbols.length} symbols?`)) return;
+    try {
+      await api.post(`/trades/holdings/bulk-delete`, { customerId: customer._id, symbols: selectedSymbols });
+      setSelectedSymbols([]);
+      fetchHoldings();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete holdings');
     }
   };
 
@@ -45,6 +78,14 @@ const Holdings = ({ customer }) => {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border animate-in slide-in-from-top-2 fade-in ${toast.type === 'error' ? 'bg-rose-950/90 border-rose-900/50 text-rose-200' : 'bg-emerald-950/90 border-emerald-900/50 text-emerald-200'}`}>
+          <span className="material-symbols-outlined text-[20px]">{toast.type === 'error' ? 'error' : 'check_circle'}</span>
+          <span className="text-sm font-bold">{toast.message}</span>
+        </div>
+      )}
+
       {/* Sticky Top Section */}
       <div className="sticky top-[-16px] pt-4 bg-slate-950 z-20 pb-2 mb-2">
         {/* Total Equity Card */}
@@ -70,10 +111,42 @@ const Holdings = ({ customer }) => {
             <span className="material-symbols-outlined text-[16px]">table_chart</span>
             ACTIVE HOLDINGS ({holdings.length})
           </div>
-          <button className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-[11px] font-bold uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[16px]">filter_list</span>
-            FILTERS
-          </button>
+          <div className="flex items-center gap-4">
+            {isSelectionMode ? (
+              <>
+                {holdings.length > 0 && (
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-400 hover:text-slate-200">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedSymbols.length === holdings.length && holdings.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    />
+                    ALL
+                  </label>
+                )}
+                {selectedSymbols.length > 0 ? (
+                  <button onClick={handleBulkDelete} className="flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors text-[11px] font-bold uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                    DELETE ({selectedSymbols.length})
+                  </button>
+                ) : (
+                  <button onClick={() => { setIsSelectionMode(false); setSelectedSymbols([]); }} className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-[11px] font-bold uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                    CANCEL
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button onClick={() => setIsSelectionMode(true)} className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors text-[11px] font-bold uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[16px]">checklist</span>
+                  SELECT
+                </button>
+               
+              </>
+            )}
+          </div>
         </div>
         
         {/* Fading bottom edge for sticky header */}
@@ -129,19 +202,31 @@ const Holdings = ({ customer }) => {
             {idx === 0 && <div className="absolute inset-0 border border-dashed border-blue-500/20 rounded-xl pointer-events-none"></div>}
             
             <div className="flex justify-between items-start mb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold text-slate-100 text-base">{item.symbol}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
-                    item.type === 'Buy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  }`}>
-                    {item.type}
-                  </span>
+              <div className="flex items-start gap-3">
+                {isSelectionMode && (
+                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedSymbols.includes(item.symbol)}
+                      onChange={() => toggleSelection(item.symbol)}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-bold text-slate-100 text-base">{item.symbol}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                      item.type === 'Buy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    }`}>
+                      {item.type}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-bold text-slate-100 text-base">{formatCurrency(item.lastPrice)}</div>
-                <div className="text-[10px] text-slate-400">Avg Cost: <span className="text-slate-300">{formatCurrency(item.avgCost)}</span></div>
+                <div className="text-[10px] text-slate-400">Avg: <span className="text-slate-300">{formatCurrency(item.avgCost)}</span></div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800">
@@ -192,6 +277,17 @@ const Holdings = ({ customer }) => {
           customer={customer}
           holding={selectedReceipt}
           onClose={() => setSelectedReceipt(null)}
+          onEdit={async (updatedData) => {
+            try {
+              await api.put(`/trades/holdings/edit/${customer._id}/${selectedReceipt.symbol}`, updatedData);
+              fetchHoldings();
+              // Optionally close receipt, or leave it open to see changes. Let's close it for now.
+              setSelectedReceipt(null);
+            } catch (err) {
+              console.error(err);
+              showToast(err.response?.data?.message || 'Failed to update holding', 'error');
+            }
+          }}
         />
       )}
     </div>

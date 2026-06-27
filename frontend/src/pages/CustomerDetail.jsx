@@ -5,11 +5,19 @@ import Holdings from '../components/customer/Holdings';
 import Executions from '../components/customer/Executions';
 import WeeklyRecords from '../components/customer/WeeklyRecords';
 import Settings from '../components/customer/Settings';
+import AvgCalcModal from '../components/customer/AvgCalcModal';
 
 const CustomerDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('input');
+  const [editingTradeData, setEditingTradeData] = useState(null);
+  const [isAvgCalcOpen, setIsAvgCalcOpen] = useState(false);
+  
+  const handleEditRequest = (tradeData) => {
+    setEditingTradeData(tradeData);
+    setActiveTab('input');
+  };
   
   const customer = location.state?.customer;
 
@@ -24,12 +32,12 @@ const CustomerDetail = () => {
 
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'input': return <InputMode customer={customer} />;
-      case 'holdings': return <Holdings customer={customer} />;
+      case 'input': return <InputMode customer={customer} editingTradeData={editingTradeData} setEditingTradeData={setEditingTradeData} />;
+      case 'holdings': return <Holdings customer={customer} onEditRequest={handleEditRequest} />;
       case 'executions': return <Executions customer={customer} />;
-      case 'weekly': return <WeeklyRecords customer={customer} />;
-      case 'settings': return <Settings customer={customer} />;
-      default: return <InputMode customer={customer} />;
+      case 'weekly': return <WeeklyRecords customer={customer} onEditRequest={handleEditRequest} />;
+      case 'settings': return <Settings customer={customer} onOpenAvgCalc={() => setIsAvgCalcOpen(true)} />;
+      default: return <InputMode customer={customer} editingTradeData={editingTradeData} setEditingTradeData={setEditingTradeData} />;
     }
   };
 
@@ -44,8 +52,16 @@ const CustomerDetail = () => {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="flex flex-col items-end">
-          {/* <h2 className="text-lg font-bold leading-tight text-slate-100">{customer.name}</h2> */}
-          <span className="bg-slate-800/80 border border-slate-700/80 rounded px-2 py-0.5 mt-0.5 text-[10px] font-mono text-slate-300">ID: {customer.id}</span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <button 
+              onClick={() => setIsAvgCalcOpen(true)}
+              className="text-slate-400 hover:text-blue-400 p-1.5 rounded-full bg-slate-900 border border-slate-700/50 hover:bg-slate-800 transition-colors flex items-center justify-center shadow-sm"
+              title="Average Calculator"
+            >
+              <span className="material-symbols-outlined text-[16px]">calculate</span>
+            </button>
+            <span className="bg-slate-800/80 border border-slate-700/80 rounded px-2 py-0.5 text-[10px] font-mono text-slate-300">ID: {customer.id}</span>
+          </div>
         </div>
       </header>
 
@@ -70,13 +86,6 @@ const CustomerDetail = () => {
           <span className="material-symbols-outlined mb-1 text-[24px]">account_balance_wallet</span>
           <span className="text-[10px] font-medium tracking-wide">Holdings</span>
         </button>
-        {/* <button 
-          className={`flex flex-col items-center p-2 rounded-lg transition-colors w-1/5 ${activeTab === 'executions' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}`} 
-          onClick={() => setActiveTab('executions')}
-        >
-          <span className="material-symbols-outlined mb-1 text-[24px]">swap_horiz</span>
-          <span className="text-[10px] font-medium tracking-wide">Executions</span>
-        </button> */}
         <button 
           className={`flex flex-col items-center p-2 rounded-lg transition-colors w-1/5 ${activeTab === 'weekly' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}`} 
           onClick={() => setActiveTab('weekly')}
@@ -92,6 +101,8 @@ const CustomerDetail = () => {
           <span className="text-[10px] font-medium tracking-wide">Settings</span>
         </button>
       </nav>
+
+      <AvgCalcModal isOpen={isAvgCalcOpen} onClose={() => setIsAvgCalcOpen(false)} />
     </div>
   );
 };

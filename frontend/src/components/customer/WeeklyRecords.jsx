@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import TradeReceipt from './TradeReceipt';
 
-const WeeklyRecords = ({ customer }) => {
+const WeeklyRecords = ({ customer, onEditRequest }) => {
   const navigate = useNavigate();
   const [exits, setExits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   useEffect(() => {
     fetchExits();
@@ -36,6 +38,31 @@ const WeeklyRecords = ({ customer }) => {
     } catch (err) {
       console.error(err);
       alert('Failed to delete exit record');
+    }
+  };
+
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === exits.length && exits.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(exits.map(e => e._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} records?`)) return;
+    try {
+      await api.post(`/trades/weekly/bulk-delete`, { ids: selectedIds });
+      setSelectedIds([]);
+      fetchExits();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete records');
     }
   };
 
@@ -82,10 +109,42 @@ const WeeklyRecords = ({ customer }) => {
             <span className="material-symbols-outlined text-[16px]">receipt_long</span>
             PAST TRADES ({exits.length})
           </div>
-          <button className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-[11px] font-bold uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[16px]">filter_list</span>
-            FILTERS
-          </button>
+          <div className="flex items-center gap-4">
+            {isSelectionMode ? (
+              <>
+                {exits.length > 0 && (
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-400 hover:text-slate-200">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.length === exits.length && exits.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    />
+                    ALL
+                  </label>
+                )}
+                {selectedIds.length > 0 ? (
+                  <button onClick={handleBulkDelete} className="flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors text-[11px] font-bold uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                    DELETE ({selectedIds.length})
+                  </button>
+                ) : (
+                  <button onClick={() => { setIsSelectionMode(false); setSelectedIds([]); }} className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-[11px] font-bold uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                    CANCEL
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button onClick={() => setIsSelectionMode(true)} className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors text-[11px] font-bold uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[16px]">checklist</span>
+                  SELECT
+                </button>
+             
+              </>
+            )}
+          </div>
         </div>
         
         {/* Fading bottom edge for sticky header */}
@@ -144,17 +203,29 @@ const WeeklyRecords = ({ customer }) => {
             {idx === 0 && <div className="absolute inset-0 border border-dashed border-blue-500/20 rounded-xl pointer-events-none"></div>}
             
             <div className="flex justify-between items-start mb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold text-slate-100 text-base">{item.symbol}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
-                    (item.action || '').toLowerCase() === 'buy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  }`}>
-                    {(item.action || 'Trade').toUpperCase()}
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-400 mt-1">
-                  {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+              <div className="flex items-start gap-3">
+                {isSelectionMode && (
+                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(item._id)}
+                      onChange={() => toggleSelection(item._id)}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-bold text-slate-100 text-base">{item.symbol}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                      (item.action || '').toLowerCase() === 'buy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    }`}>
+                      {(item.action || 'Trade').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-1">
+                    {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
@@ -211,6 +282,20 @@ const WeeklyRecords = ({ customer }) => {
           customer={customer}
           type="exit"
           onClose={() => setSelectedReceipt(null)}
+          onEdit={async (updatedData) => {
+            try {
+              // The backend route is /trades/edit/:id
+              await api.put(`/trades/edit/${selectedReceipt._id}`, {
+                ...selectedReceipt,
+                ...updatedData
+              });
+              fetchExits();
+              setSelectedReceipt(null);
+            } catch (err) {
+              console.error(err);
+              alert(err.response?.data?.message || 'Failed to update record');
+            }
+          }}
         />
       )}
     </div>
