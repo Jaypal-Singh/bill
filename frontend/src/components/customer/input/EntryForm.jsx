@@ -304,7 +304,7 @@ const EntryForm = ({ formatCurrency, customer, editingTradeData, setEditingTrade
           </div>
         </div>
         <div className="flex-[0.8]">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Brokerage (%)</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Brockerage (%)</label>
           <div className="relative">
             <input 
               type="number" 
@@ -326,7 +326,7 @@ const EntryForm = ({ formatCurrency, customer, editingTradeData, setEditingTrade
           <div className="text-2xl font-mono font-bold text-white tracking-tight">{formatCurrency(estimatedTotal)}</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-blue-400">Brokerage</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-blue-400">Brockerage</div>
           <div className="text-sm font-mono text-slate-500">{formatCurrency(brokerageFee)}</div>
         </div>
       </div>

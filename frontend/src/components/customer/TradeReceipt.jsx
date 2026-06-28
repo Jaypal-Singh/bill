@@ -62,7 +62,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
 
       const dataUrl = await toPng(receiptRef.current, { 
         backgroundColor: theme === 'dark' ? '#0f172a' : '#f8fafc',
-        pixelRatio: 2,
+        pixelRatio: 4,
         filter: filter,
         style: {
           transform: 'scale(1)',
@@ -153,7 +153,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
                 
                 <div>
                   <h1 className={`text-xl font-black tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    J D BROKERAGE PVT. LTD.
+                    J D BROCKERAGE PVT. LTD.
                   </h1>
                   <h2 className={`text-xs font-semibold tracking-widest uppercase ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                     {type.toUpperCase()}
@@ -241,7 +241,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
                 </div>
                 
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isShortExit ? 'Sell Price' : 'Buy Price'}</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isShortExit ? 'Avg' : 'Avg'}</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} />
                   ) : (
@@ -264,13 +264,18 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
                   )}
                 </div>
 
-                {(isEditing || parseFloat(trade.marginRs) > 0) && (
+                {(isEditing || parseFloat(trade.marginRs) > 0 || parseFloat(trade.marginPct) > 0) && (
                   <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
                     <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Money Margin</span>
                     {isEditing ? (
-                      <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.marginRs} onChange={e => setEditData({...editData, marginRs: e.target.value})} />
+                      <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.marginRs || editData.marginPct} onChange={e => setEditData({...editData, marginRs: e.target.value})} />
                     ) : (
-                      <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(trade.marginRs)}</span>
+                      <span className={`text-sm font-bold flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        {parseFloat(trade.marginPct) > 0 && (
+                          <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">{trade.marginPct}%</span>
+                        )}
+                        {formatCurrency(trade.marginRs)}
+                      </span>
                     )}
                   </div>
                 )}
@@ -307,7 +312,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
             <div className="mt-3 mb-1 flex flex-col items-center justify-center">
              
               <div className={`text-[10px] font-bold tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                © J D BROKERAGE PVT. LTD.
+                © J D BROCKERAGE PVT. LTD.
               </div>
             </div>
 

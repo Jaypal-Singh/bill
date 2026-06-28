@@ -169,7 +169,7 @@ export default function Invoice() {
 
             // 3. High-Res Capture
             const canvas = await html2canvas(captureContainer, {
-                scale: 3,
+                scale: 4,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',
@@ -192,7 +192,7 @@ export default function Invoice() {
 
             let heightLeft = imgHeight;
             let position = 0;
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
 
             // Add first page
             pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
@@ -335,7 +335,7 @@ export default function Invoice() {
                                 <th className="px-4 py-3 text-right">Qty (Lot)</th>
                                 <th className="px-4 py-3 text-right">Buy Avg</th>
                                 <th className="px-4 py-3 text-right">Sell Avg</th>
-                                <th className="px-4 py-3 text-right">Brokerage</th>
+                                <th className="px-4 py-3 text-right">Brockerage</th>
                                 <th className="px-4 py-3 text-right rounded-r-lg">Net P&L</th>
                             </tr>
                         </thead>
@@ -374,7 +374,7 @@ export default function Invoice() {
                             <span>{money(summary.totalTurnover)}</span>
                         </div>
                         <div className="flex justify-between text-[#4b5563]">
-                            <span>Brokerage & Charges</span>
+                            <span>Brockerage & Charges</span>
                             <span>{money(summary.totalBrokerage)}</span>
                         </div>
                         {/* Display Margin if entered */}
@@ -395,7 +395,7 @@ export default function Invoice() {
 
                 {/* Footer Note */}
                 <div className="mt-8 text-center text-[10px] text-[#9ca3af] footer-line">
-                    <p className="mt-1">J D BROKERAGE PVT. LTD.</p>
+                    <p className="mt-1">J D BROCKERAGE PVT. LTD.</p>
                 </div>
 
             </div>

@@ -72,7 +72,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
 
       const dataUrl = await toPng(receiptRef.current, { 
         backgroundColor: theme === 'dark' ? '#0f172a' : '#f8fafc',
-        pixelRatio: 2,
+        pixelRatio: 4,
         filter: filter,
         style: {
           transform: 'scale(1)',
@@ -138,7 +138,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                 
                 <div>
                   <h1 className={`text-xl font-black tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    J D BROKERAGE PVT. LTD.
+                    J D BROCKERAGE PVT. LTD.
                   </h1>
                   <h2 className={`text-xs font-semibold tracking-widest uppercase ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                     entry
@@ -179,7 +179,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
               </div>
               <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                  CUST. NAME
+                  NAME
                 </div>
                 <div className={`font-bold text-sm leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                   {customer.name?.split(' ')[0] || 'User'}
@@ -220,7 +220,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                   )}
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Buy Price</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Avg</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} />
                   ) : (
@@ -250,7 +250,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                   )}
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Brokerage</span>
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Brockerage</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.brokerageFee} onChange={e => setEditData({...editData, brokerageFee: e.target.value})} />
                   ) : (
@@ -290,7 +290,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
             <div className="mt-3 mb-1 flex flex-col items-center justify-center">
              
               <div className={`text-[10px] font-bold tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                © J D BROKERAGE PVT. LTD.
+                © J D BROCKERAGE PVT. LTD.
               </div>
             </div>
 
