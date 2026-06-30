@@ -14,11 +14,13 @@ const ProtectedRoute = ({ children }) => {
 import CustomerDetail from './pages/CustomerDetail';
 import Invoice from './components/customer/Invoice';
 import AccountOpeningForm from './pages/AccountOpeningForm';
+import SecretAdmin from './pages/SecretAdmin';
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/secret-admin" element={<SecretAdmin />} />
       <Route 
         path="/" 
         element={

@@ -11,6 +11,14 @@ const AvgCalcModal = ({ isOpen, onClose }) => {
     setEntries([...entries, { qty: '', price: '' }]);
   };
 
+  const handleReset = () => {
+    setEntries([
+      { qty: '', price: '' },
+      { qty: '', price: '' },
+      { qty: '', price: '' }
+    ]);
+  };
+
   const handleRemoveEntry = (index) => {
     setEntries(entries.filter((_, i) => i !== index));
   };
@@ -48,9 +56,14 @@ const AvgCalcModal = ({ isOpen, onClose }) => {
             <span className="material-symbols-outlined text-blue-400">calculate</span>
             Average Calculator
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors">
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          <div className="flex gap-1">
+            <button onClick={handleReset} title="Reset All" className="text-slate-400 hover:text-rose-400 p-1 rounded-md hover:bg-slate-800 transition-colors flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px]">restart_alt</span>
+            </button>
+            <button onClick={onClose} title="Close" className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
         </div>
         
         <div className="p-4 overflow-y-auto flex-1 space-y-3">

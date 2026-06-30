@@ -123,7 +123,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
         {/* Receipt Container */}
         <div 
           ref={receiptRef}
-          className={`w-full overflow-hidden transition-colors duration-300 ${
+          className={`w-full overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''} ${
             theme === 'dark' 
               ? 'bg-[#0f172a] text-slate-200' 
               : 'bg-[#f8fafc] text-slate-800'
@@ -203,12 +203,12 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
               </div>
               <div className="px-3  py-3 space-y-3">
                 {!isEditing && (
-                  <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                  <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                     <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Mode</span>
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{holding.type.toUpperCase()}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Qty (Lot)</span>
                   {isEditing ? (
                     <div className="flex gap-2">
@@ -219,7 +219,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{displayQty} {holding.lot ? `(${holding.lot})` : ''}</span>
                   )}
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Avg</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} />
@@ -228,12 +228,12 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                   )}
                 </div>
                 {!isEditing && (
-                  <div className="flex justify-between items-center pb-2border-b border-dashed border-slate-200 dark:border-slate-800">
+                  <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                     <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{isBuy ? 'Invested' : 'Invested'}</span>
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(displayInvested)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>LTP</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.ltp} onChange={e => setEditData({...editData, ltp: e.target.value})} />
@@ -241,7 +241,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.lastPrice)}</span>
                   )}
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Money Margin</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.marginRs} onChange={e => setEditData({...editData, marginRs: e.target.value})} />
@@ -249,7 +249,7 @@ const HoldingReceipt = ({ customer, holding, onClose, onEdit }) => {
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(holding.totalMargin || 0)}</span>
                   )}
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <div className={`flex justify-between items-center pb-2 border-b border-solid ${theme === 'dark' ? 'border-slate-600' : 'border-slate-300'}`}>
                   <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Brockerage</span>
                   {isEditing ? (
                     <input type="number" className="w-24 bg-slate-800 text-white rounded px-2 py-1 text-sm text-right" value={editData.brokerageFee} onChange={e => setEditData({...editData, brokerageFee: e.target.value})} />

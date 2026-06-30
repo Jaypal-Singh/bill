@@ -13,7 +13,6 @@ const AccountOpeningForm = () => {
     aadhaarLast4: '',
     panLast4: '',
     refName: '',
-    address: '',
     initialDeposit: '',
     applicationDate: new Date().toISOString().split('T')[0],
   });
@@ -120,7 +119,7 @@ const AccountOpeningForm = () => {
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Mobile Number (Last 4 Digits)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
-                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">******</span>
+                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">XXXXXX</span>
                 <input type="text" name="mobileLast4" maxLength="4" value={formData.mobileLast4} onChange={handleChange} required placeholder="7890" className="w-full bg-transparent px-3 py-2 outline-none font-mono tracking-widest" />
               </div>
             </div>
@@ -128,7 +127,7 @@ const AccountOpeningForm = () => {
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Aadhaar Number (Last 4 Digits)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
-                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">********</span>
+                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">XXXXXXXX</span>
                 <input type="text" name="aadhaarLast4" maxLength="4" value={formData.aadhaarLast4} onChange={handleChange} required placeholder="1234" className="w-full bg-transparent px-3 py-2 outline-none font-mono tracking-widest" />
               </div>
             </div>
@@ -136,14 +135,9 @@ const AccountOpeningForm = () => {
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">PAN Card (Last 4 Chars)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
-                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">******</span>
+                <span className="flex items-center px-3 bg-slate-900 border-r border-slate-700 text-slate-500 font-mono tracking-widest text-lg mt-1">XXXXXX</span>
                 <input type="text" name="panLast4" maxLength="4" value={formData.panLast4} onChange={handleChange} required placeholder="123A" className="w-full bg-transparent px-3 py-2 outline-none font-mono tracking-widest uppercase" />
               </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Address</label>
-              <textarea name="address" value={formData.address} onChange={handleChange} rows="2" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none"></textarea>
             </div>
 
             <div>
@@ -219,7 +213,7 @@ const AccountOpeningForm = () => {
               </div>
               <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Mobile Number</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px', wordWrap: 'break-word' }}>******{formData.mobileLast4.padStart(4, '*')}</span>
+                <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px', wordWrap: 'break-word' }}>XXXXXX{formData.mobileLast4.padStart(4, 'X')}</span>
               </div>
             </div>
 
@@ -232,14 +226,6 @@ const AccountOpeningForm = () => {
               <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>PAN Card Number</span>
                 <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px' }}>******{formData.panLast4.padStart(4, '*')}</span>
-              </div>
-            </div>
-
-            {/* Row 5 */}
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Full Address</span>
-                <span style={{ fontSize: '16px', wordWrap: 'break-word' }}>{formData.address || '-'}</span>
               </div>
             </div>
 

@@ -1,8 +1,87 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-// Backend API is now used to fetch customers
+const CustomerCard = ({ customer, onClick, onDeleteSwipe }) => {
+  const [translateX, setTranslateX] = useState(0);
+  const startX = useRef(null);
+  const currentX = useRef(null);
+  const isDragging = useRef(false);
+
+  const startDrag = (clientX) => {
+    startX.current = clientX;
+    isDragging.current = true;
+  };
+
+  const moveDrag = (clientX) => {
+    if (!isDragging.current || !startX.current) return;
+    currentX.current = clientX;
+    const diff = currentX.current - startX.current;
+    
+    if (diff < 0) {
+      setTranslateX(Math.max(diff, -100));
+    }
+  };
+
+  const endDrag = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    
+    if (startX.current !== null && currentX.current !== null) {
+      const diff = currentX.current - startX.current;
+      if (diff < -60) {
+        onDeleteSwipe(customer);
+      }
+    }
+    
+    setTranslateX(0);
+    startX.current = null;
+    currentX.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Background Delete Action */}
+      <div className="absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-5 text-white bg-rose-600 z-0 rounded-lg">
+        <span className="material-symbols-outlined text-[24px]">delete</span>
+      </div>
+      
+      {/* Foreground Card */}
+      <div 
+        onClick={() => { if(translateX === 0) onClick(customer) }}
+        onTouchStart={(e) => startDrag(e.touches[0].clientX)}
+        onTouchMove={(e) => moveDrag(e.touches[0].clientX)}
+        onTouchEnd={endDrag}
+        onMouseDown={(e) => startDrag(e.clientX)}
+        onMouseMove={(e) => moveDrag(e.clientX)}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        style={{ transform: `translateX(${translateX}px)`, transition: isDragging.current ? 'none' : 'transform 0.3s ease-out' }}
+        className="bg-slate-900/95 border border-slate-800 rounded-lg p-4 hover:border-blue-500/50 cursor-pointer relative z-10 w-full touch-pan-y shadow-md"
+      >
+        <div className="flex justify-between items-start mb-2 relative z-10">
+          <div>
+            <h3 className="font-medium text-slate-100">{customer.name}</h3>
+            <span className="font-mono text-[11px] text-slate-400">{customer.customerId}</span>
+          </div>
+          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
+            customer.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+            customer.status === 'Suspended' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+          }`}>
+            {customer.status || 'Active'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-800 relative z-10">
+          <span className="text-slate-500 text-[11px] uppercase tracking-wider font-bold">Holdings</span>
+          <span className={`font-mono ${customer.holdings === '$0.00' ? 'text-slate-500' : 'text-blue-400'}`}>
+            {customer.holdings || '$0.00'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -12,6 +91,9 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListLoading, setIsListLoading] = useState(true);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const navigate = useNavigate();
 
@@ -60,7 +142,8 @@ const Dashboard = () => {
       setIsModalOpen(false);
       fetchCustomers(user._id); // Refresh list
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create customer');
+      console.error('Failed to create customer API error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create customer');
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +157,22 @@ const Dashboard = () => {
 
   const handleCustomerClick = (customer) => {
     navigate(`/customer/${customer._id}`, { state: { customer: { ...customer, id: customer.customerId } } });
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/customers/${customerToDelete._id}`);
+      setIsDeleteModalOpen(false);
+      setCustomerToDelete(null);
+      fetchCustomers(user._id);
+    } catch (err) {
+      console.error('Failed to delete customer', err);
+      alert(err.response?.data?.message || 'Failed to delete customer');
+    } finally {
+      setIsDeleting(false);
+    }
   };
   // -------------------------------------------------------------
   // MASTER DASHBOARD VIEW
@@ -127,6 +226,39 @@ const Dashboard = () => {
                 <span className="material-symbols-outlined text-[18px]">person_add</span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Customer Confirmation Modal */}
+      {isDeleteModalOpen && customerToDelete && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+          <div className="bg-slate-900 border border-rose-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl shadow-rose-900/20 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+              <span className="material-symbols-outlined text-rose-500 text-3xl">warning</span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-white text-center mb-2">Delete Customer?</h3>
+            <p className="text-slate-400 text-sm text-center mb-6">
+              You are about to delete <span className="text-rose-400 font-semibold">{customerToDelete.name}</span>. This action cannot be undone. All associated data will be permanently removed.
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)} 
+                disabled={isDeleting}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteCustomer}
+                disabled={isDeleting}
+                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-3 rounded-xl transition-colors flex justify-center items-center gap-2 shadow-lg shadow-rose-600/30 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -202,34 +334,15 @@ const Dashboard = () => {
             </div>
           ) : (
             customers.map(customer => (
-              <div 
-                key={customer._id} 
-                onClick={() => handleCustomerClick(customer)}
-                className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 hover:border-blue-500/50 transition-colors cursor-pointer shadow-sm relative overflow-hidden group"
-              >
-                {/* Subtle hover effect background */}
-                <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity"></div>
-                
-                <div className="flex justify-between items-start mb-2 relative z-10">
-                  <div>
-                    <h3 className="font-medium text-slate-100">{customer.name}</h3>
-                    <span className="font-mono text-[11px] text-slate-400">{customer.customerId}</span>
-                  </div>
-                  <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
-                     customer.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                     customer.status === 'Suspended' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                     'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                  }`}>
-                    {customer.status}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-800 relative z-10">
-                  <span className="text-slate-500 text-[11px] uppercase tracking-wider font-bold">Holdings</span>
-                  <span className={`font-mono ${customer.holdings === '$0.00' ? 'text-slate-500' : 'text-blue-400'}`}>
-                    {customer.holdings}
-                  </span>
-                </div>
-              </div>
+              <CustomerCard 
+                key={customer._id}
+                customer={customer}
+                onClick={handleCustomerClick}
+                onDeleteSwipe={(c) => {
+                  setCustomerToDelete(c);
+                  setIsDeleteModalOpen(true);
+                }}
+              />
             ))
           )}
         </div>

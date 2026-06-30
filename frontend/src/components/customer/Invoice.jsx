@@ -94,12 +94,8 @@ export default function Invoice() {
 
         const processed = filtered.map(order => {
             const qty = parseFloat(order.quantity) || 0;
-            const entryPrice = parseFloat(order.entryPrice) || 0;
-            const exitPrice = parseFloat(order.price) || 0;
-            const isShortExit = (order.action || '').toLowerCase() === 'buy'; 
-            
-            const buyAvg = isShortExit ? exitPrice : entryPrice;
-            const sellAvg = isShortExit ? entryPrice : exitPrice;
+            const entryPrice = parseFloat(order.price) || 0;
+            const exitPrice = parseFloat(order.ltp) || 0;
 
             const entryValue = entryPrice * qty;
             const exitValue = exitPrice * qty;
@@ -113,8 +109,8 @@ export default function Invoice() {
             return {
                 ...order,
                 qty,
-                buyAvg,
-                sellAvg,
+                entryPrice,
+                exitPrice,
                 netPnl,
                 totalBrokerage: finalBrokerage,
                 dateStr: new Date(order.date || order.createdAt).toLocaleDateString()
@@ -333,8 +329,8 @@ export default function Invoice() {
                                 <th className="px-4 py-3 rounded-l-lg">Date</th>
                                 <th className="px-4 py-3">Symbol</th>
                                 <th className="px-4 py-3 text-right">Qty (Lot)</th>
-                                <th className="px-4 py-3 text-right">Buy Avg</th>
-                                <th className="px-4 py-3 text-right">Sell Avg</th>
+                                <th className="px-4 py-3 text-right">Entry Price</th>
+                                <th className="px-4 py-3 text-right">Exit Price</th>
                                 <th className="px-4 py-3 text-right">Brockerage</th>
                                 <th className="px-4 py-3 text-right rounded-r-lg">Net P&L</th>
                             </tr>
@@ -351,8 +347,8 @@ export default function Invoice() {
                                     </td>
 
                                     <td className="px-4 py-3 text-right text-[#374151]">{item.qty} {item.lot ? `(${item.lot})` : ''}</td>
-                                    <td className="px-4 py-3 text-right text-[#374151]">{item.buyAvg.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-right text-[#374151]">{item.sellAvg.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-right text-[#374151]">{item.entryPrice.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-right text-[#374151]">{item.exitPrice.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-right text-[#374151]">{money(item.totalBrokerage)}</td>
                                     <td className={`px-4 py-3 text-right font-bold ${item.netPnl >= 0 ? 'text-[#00B050]' : 'text-[#ef4444]'}`}>
                                         {money(item.netPnl)}
