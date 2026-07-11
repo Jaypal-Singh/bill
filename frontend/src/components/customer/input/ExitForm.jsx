@@ -79,7 +79,6 @@ const ExitForm = ({ formatCurrency, customer, editingTradeData, setEditingTradeD
         showToast(`Successfully updated EXIT ${action.toUpperCase()} for ${qtyNum} ${symbol}`, 'success');
         savedData = res.data;
       } else {
-        const res = await api.post('/trades', payload);
         showToast(`Successfully saved EXIT ${action.toUpperCase()} for ${qtyNum} ${symbol}`, 'success');
         savedData = res.data;
       }

@@ -44,9 +44,9 @@ const AccountOpeningForm = () => {
       const element = document.getElementById('pdf-content');
       
       const opt = {
-        margin: 15,
+        margin: 10,
         filename: `Account_Opening_${formData.customerName || 'Form'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'png', quality: 1.0 },
         html2canvas: { 
           scale: 4, 
           useCORS: true, 
@@ -54,7 +54,8 @@ const AccountOpeningForm = () => {
           windowWidth: 800,
           scrollX: 0,
           scrollY: 0,
-          logging: false
+          logging: false,
+          backgroundColor: '#ffffff'
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
@@ -73,6 +74,13 @@ const AccountOpeningForm = () => {
     generatePDF();
   };
 
+  // Reusable PDF field styles
+  const labelStyle = { fontSize: '13px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' };
+  const valueStyle = { fontSize: '17px', fontWeight: '600', color: '#0f172a', wordWrap: 'break-word' };
+  const itemStyle = { display: 'flex', alignItems: 'baseline', gap: '8px' };
+  const colItemStyle = { display: 'flex', alignItems: 'baseline', gap: '8px', flex: 1 };
+  const rowStyle = { display: 'flex', gap: '32px' };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -86,7 +94,7 @@ const AccountOpeningForm = () => {
 
         <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-10 shadow-xl">
           <div className="mb-8 border-b border-slate-800 pb-4">
-            <h2 className="text-xl font-bold text-blue-400 uppercase tracking-wider mb-1">J D BROCKERAGE PVT. LTD.</h2>
+            <h2 className="text-xl font-bold text-blue-400 uppercase tracking-wider mb-1">RADHE BROCKRAGE PVT LTD</h2>
             <p className="text-slate-500 text-sm">Master Client Registry - New Account Application</p>
           </div>
 
@@ -145,15 +153,14 @@ const AccountOpeningForm = () => {
               <input type="text" name="refName" value={formData.refName} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="Who referred this customer?" />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Initial Deposit</label>
-                <input type="text" name="initialDeposit" value={formData.initialDeposit} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="₹ 0.00" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Date of Application</label>
-                <input type="date" name="applicationDate" value={formData.applicationDate} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none [color-scheme:dark]" />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Initial Deposit</label>
+              <input type="text" name="initialDeposit" value={formData.initialDeposit} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="₹ 0.00" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Date of Application</label>
+              <input type="date" name="applicationDate" value={formData.applicationDate} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none [color-scheme:dark]" />
             </div>
 
             <div className="md:col-span-2">
@@ -174,11 +181,10 @@ const AccountOpeningForm = () => {
       <div id="pdf-wrapper" style={{ display: 'none', position: 'absolute', top: 0, left: 0, zIndex: 9999, width: '800px', backgroundColor: '#ffffff' }}>
         <div id="pdf-content" style={{ backgroundColor: '#ffffff', color: '#000000', padding: '40px', fontFamily: 'sans-serif', width: '800px', boxSizing: 'border-box' }}>
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '24px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '24px', marginBottom: '32px' }}>
             <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '900', margin: '0', color: '#0f172a', letterSpacing: '-1px' }}>J D BROCKERAGE PVT. LTD.</h1>
+              <h1 style={{ fontSize: '28px', fontWeight: '900', margin: '0', color: '#0f172a', letterSpacing: '-1px' }}>RADHE BROCKRAGE PVT LTD</h1>
               <p style={{ fontSize: '14px', fontWeight: 'bold',  letterSpacing: '2px', marginTop: '4px', color: '#475569', margin: '4px 0 0 0' }}>Account Opening Application Form</p>
-              <p style={{ fontSize: '12px', marginTop: '4px', color: '#64748b', margin: '4px 0 0 0' }}></p>
             </div>
             {photo ? (
               <div style={{ width: '135px', height: '175px', border: '2px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
@@ -191,58 +197,66 @@ const AccountOpeningForm = () => {
             )}
           </div>
 
-          {/* Form Content */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Row 1 */}
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Customer Name</span>
-                <span style={{ fontSize: '18px', fontWeight: '600', wordWrap: 'break-word' }}>{formData.customerName || '-'}</span>
+          {/* Form Content - One key-value per row */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Row 1: Customer Name */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>Customer Name :</span>
+              <span style={valueStyle}>{formData.customerName || '-'}</span>
+            </div>
+
+            {/* Row 2: Customer ID */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>Customer ID :</span>
+              <span style={valueStyle}>{formData.customerId || '-'}</span>
+            </div>
+
+            {/* Row 3: Date of Birth (left) & Gender (right) */}
+            <div style={rowStyle}>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Date of Birth :</span>
+                <span style={valueStyle}>{formData.dob ? new Date(formData.dob).toLocaleDateString('en-GB') : '-'}</span>
               </div>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Customer I'd</span>
-                <span style={{ fontSize: '18px', fontWeight: '600', wordWrap: 'break-word' }}>{formData.customerId || '-'}</span>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Gender :</span>
+                <span style={valueStyle}>{formData.gender}</span>
               </div>
             </div>
 
-            {/* Row 2 */}
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Date of Birth / Gender</span>
-                <span style={{ fontSize: '16px', wordWrap: 'break-word' }}>{formData.dob ? new Date(formData.dob).toLocaleDateString('en-GB') : '-'} | {formData.gender}</span>
+            {/* Row 4: Mobile Number */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>Mobile Number :</span>
+              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXX{formData.mobileLast4.padStart(4, 'X')}</span>
+            </div>
+
+            {/* Row 5: Aadhaar Number */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>Aadhaar Number :</span>
+              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>********{formData.aadhaarLast4.padStart(4, '*')}</span>
+            </div>
+
+            {/* Row 6: PAN Card Number */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>PAN Card Number :</span>
+              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>******{formData.panLast4.padStart(4, '*')}</span>
+            </div>
+
+            {/* Row 7: Reference Name (left) & Date of Application (right) */}
+            <div style={rowStyle}>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Reference Name :</span>
+                <span style={valueStyle}>{formData.refName || '-'}</span>
               </div>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Mobile Number</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px', wordWrap: 'break-word' }}>XXXXXX{formData.mobileLast4.padStart(4, 'X')}</span>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Date of Application :</span>
+                <span style={valueStyle}>{formData.applicationDate ? new Date(formData.applicationDate).toLocaleDateString('en-GB') : '-'}</span>
               </div>
             </div>
 
-            {/* Row 4 */}
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Aadhaar Number</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px' }}>********{formData.aadhaarLast4.padStart(4, '*')}</span>
-              </div>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>PAN Card Number</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px' }}>******{formData.panLast4.padStart(4, '*')}</span>
-              </div>
-            </div>
-
-            {/* Row 6 */}
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Reference Name</span>
-                <span style={{ fontSize: '16px', wordWrap: 'break-word' }}>{formData.refName || '-'}</span>
-              </div>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Initial Deposit</span>
-                <span style={{ fontSize: '16px', fontWeight: '600' }}>{formData.initialDeposit || '-'}</span>
-              </div>
-              <div style={{ flex: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '10px',  fontWeight: 'bold', display: 'block', color: '#64748b', marginBottom: '4px' }}>Date of Application</span>
-                <span style={{ fontSize: '16px' }}>{formData.applicationDate ? new Date(formData.applicationDate).toLocaleDateString('en-GB') : '-'}</span>
-              </div>
+            {/* Row 8: Initial Deposit */}
+            <div style={itemStyle}>
+              <span style={labelStyle}>Initial Deposit :</span>
+              <span style={{ ...valueStyle, fontSize: '20px', fontWeight: '700' }}>{formData.initialDeposit ? `₹ ${formData.initialDeposit}` : '-'}</span>
             </div>
           </div>
 
