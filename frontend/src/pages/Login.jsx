@@ -15,7 +15,7 @@ const Login = () => {
     setIsLoading(true);
 
     // Secret Admin Bypass
-    if (username === '987654321' && password === '12345') {
+    if (username === '9274517203' && password === '859426') {
       navigate('/secret-admin');
       return;
     }
@@ -28,10 +28,10 @@ const Login = () => {
     }
     
     // Hardcoded owner login bypass
-    if (username === '1234567890' && password === '2005') {
+    if (username === '9574074927' && password === '20107') {
       const mockOwner = {
         _id: 'owner_id',
-        username: '1234567890',
+        username: '9574074927',
         role: 'owner',
         token: 'mock-owner-token-12345'
       };

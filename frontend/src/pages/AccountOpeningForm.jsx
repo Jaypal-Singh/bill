@@ -258,11 +258,48 @@ const AccountOpeningForm = () => {
               <span style={labelStyle}>Initial Deposit :</span>
               <span style={{ ...valueStyle, fontSize: '20px', fontWeight: '700' }}>{formData.initialDeposit ? `₹ ${formData.initialDeposit}` : '-'}</span>
             </div>
+
+
+          
           </div>
 
-          {/* Footer Signatures */}
+         {/* Footer */}
+
+<div
+  style={{
+    marginTop: "80px",
+    borderTop: "1px solid #d1d5db",
+    paddingTop: "20px",
+    textAlign: "center"
+  }}
+>
+  <div
+    style={{
+      color: "#dc2626",
+      fontSize: "14px",
+      fontWeight: "700",
+      lineHeight: "24px",
+    }}
+  >
+    <strong>Note:</strong> We are not registered with SEBI. High-leverage trading involves significant financial risk. Please trade at your own risk. The company shall not be responsible for any profit, loss, or financial consequences arising from your trading activities.
+  </div>
+
+  <div
+    style={{
+      marginTop: "20px",
+      color: "#64748b",
+      fontSize: "12px",
+      fontWeight: "700",
+      letterSpacing: "2px",
+      textTransform: "uppercase"
+    }}
+  >
+    RADHE BROCKRAGE PVT. LTD.
+  </div>
+</div>
           
         </div>
+          
       </div>
     </div>
   );
