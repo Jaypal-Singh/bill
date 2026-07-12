@@ -5,7 +5,8 @@ const customerSchema = mongoose.Schema({
   name: { type: String, required: true },
   ownerId: { type: String, required: true },
   status: { type: String, default: 'Active' },
-  holdings: { type: String, default: '$0.00' }
+  holdings: { type: String, default: '$0.00' },
+  isDeleted: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

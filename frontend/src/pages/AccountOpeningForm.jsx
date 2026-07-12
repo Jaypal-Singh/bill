@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.jpeg';
 
 const AccountOpeningForm = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const AccountOpeningForm = () => {
     customerId: '',
     dob: '',
     gender: 'Male',
+    segment: 'F&O',
     mobileLast4: '',
     aadhaarLast4: '',
     panLast4: '',
@@ -75,8 +77,8 @@ const AccountOpeningForm = () => {
   };
 
   // Reusable PDF field styles
-  const labelStyle = { fontSize: '13px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' };
-  const valueStyle = { fontSize: '17px', fontWeight: '600', color: '#0f172a', wordWrap: 'break-word' };
+  const labelStyle = { fontSize: '17px', fontWeight: '900', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' };
+  const valueStyle = { fontSize: '17px', fontWeight: '900', color: '#000000', wordWrap: 'break-word' };
   const itemStyle = { display: 'flex', alignItems: 'baseline', gap: '8px' };
   const colItemStyle = { display: 'flex', alignItems: 'baseline', gap: '8px', flex: 1 };
   const rowStyle = { display: 'flex', gap: '32px' };
@@ -84,46 +86,61 @@ const AccountOpeningForm = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between  mb-6">
+        <div className="flex justify-between mb-6">
           <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-outlined text-[20px]">arrow_back</span> Back
           </button>
-          <h1 className="text-xl font-bold text-white tracking-tight">Account Opening Form</h1>
+          {/* <h1 className="text-xl font-bold text-white tracking-tight">Account Opening Form</h1> */}
           <div className="w-16"></div> {/* Spacer */}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-10 shadow-xl">
-          <div className="mb-8 border-b border-slate-800 pb-4">
-            <h2 className="text-xl font-bold text-blue-400 uppercase tracking-wider mb-1">RADHE BROCKRAGE PVT LTD</h2>
-            <p className="text-slate-500 text-sm">Master Client Registry - New Account Application</p>
+          <div className="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              {/* <img src={logo} alt="Radhe Brokerage Logo" className="h-12 w-auto object-contain mb-2" /> */}
+              <p className="text-blue-400 text-sm font-bold uppercase tracking-wider">Account Opening Form</p>
+            </div>
+            <div className="text-slate-500 text-sm md:text-right">
+              <p className="font-semibold text-slate-400">Master Client Registry</p>
+              <p>New Account Application</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            {/* Customer Name - Full Width */}
+            <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Customer Name</label>
               <input type="text" name="customerName" value={formData.customerName} onChange={handleChange} required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" />
             </div>
+
+            {/* Customer ID & Segment - Side-by-side */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Customer ID (Auto / Custom)</label>
               <input type="text" name="customerId" value={formData.customerId} onChange={handleChange} required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" />
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Date of Birth</label>
-                <input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none [color-scheme:dark]" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Gender</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none">
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Segment</label>
+              <select name="segment" value={formData.segment} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none">
+                <option value="F&O">F&O</option>
+                <option value="MCX">MCX</option>
+              </select>
             </div>
 
-            {/* Masked Inputs */}
+            {/* DOB & Gender - Side-by-side */}
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Date of Birth</label>
+              <input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none [color-scheme:dark]" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Gender</label>
+              <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none">
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            {/* Mobile Number & Initial Deposit - Side-by-side */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Mobile Number (Last 4 Digits)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
@@ -131,7 +148,12 @@ const AccountOpeningForm = () => {
                 <input type="text" name="mobileLast4" maxLength="4" value={formData.mobileLast4} onChange={handleChange} required placeholder="7890" className="w-full bg-transparent px-3 py-2 outline-none font-mono tracking-widest" />
               </div>
             </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Initial Deposit</label>
+              <input type="text" name="initialDeposit" value={formData.initialDeposit} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="₹ 0.00" />
+            </div>
 
+            {/* Aadhaar & PAN Card - Side-by-side */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Aadhaar Number (Last 4 Digits)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
@@ -139,7 +161,6 @@ const AccountOpeningForm = () => {
                 <input type="text" name="aadhaarLast4" maxLength="4" value={formData.aadhaarLast4} onChange={handleChange} required placeholder="1234" className="w-full bg-transparent px-3 py-2 outline-none font-mono tracking-widest" />
               </div>
             </div>
-
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">PAN Card (Last 4 Chars)</label>
               <div className="flex w-full bg-slate-950 border border-slate-700 rounded-lg overflow-hidden focus-within:border-blue-500">
@@ -148,21 +169,17 @@ const AccountOpeningForm = () => {
               </div>
             </div>
 
+            {/* Reference Name & Date of Application - Side-by-side */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Reference Name</label>
               <input type="text" name="refName" value={formData.refName} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="Who referred this customer?" />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Initial Deposit</label>
-              <input type="text" name="initialDeposit" value={formData.initialDeposit} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none" placeholder="₹ 0.00" />
-            </div>
-
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Date of Application</label>
               <input type="date" name="applicationDate" value={formData.applicationDate} onChange={handleChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 focus:border-blue-500 outline-none [color-scheme:dark]" />
             </div>
 
+            {/* Upload Photo - Full Width */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Upload Photo</label>
               <input type="file" accept="image/*" onChange={handlePhotoUpload} className="w-full text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-200 hover:file:bg-blue-800" />
@@ -179,12 +196,14 @@ const AccountOpeningForm = () => {
 
       {/* Hidden PDF Template */}
       <div id="pdf-wrapper" style={{ display: 'none', position: 'absolute', top: 0, left: 0, zIndex: 9999, width: '800px', backgroundColor: '#ffffff' }}>
-        <div id="pdf-content" style={{ backgroundColor: '#ffffff', color: '#000000', padding: '40px', fontFamily: 'sans-serif', width: '800px', boxSizing: 'border-box' }}>
+        <div id="pdf-content" style={{ backgroundColor: '#ffffff', color: '#000000', padding: '40px', fontFamily: 'sans-serif', width: '800px', minHeight: '1160px', position: 'relative', boxSizing: 'border-box' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '24px', marginBottom: '32px' }}>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '900', margin: '0', color: '#0f172a', letterSpacing: '-1px' }}>RADHE BROCKRAGE PVT LTD</h1>
-              <p style={{ fontSize: '14px', fontWeight: 'bold',  letterSpacing: '2px', marginTop: '4px', color: '#475569', margin: '4px 0 0 0' }}>Account Opening Application Form</p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <img src={logo} alt="Radhe Brokerage Logo" style={{ height: '140px', width: 'auto', objectFit: 'contain', alignSelf: 'flex-start' }} />
+              <p style={{ fontSize: '15px', fontWeight: '700', color: '#334155', margin: '0', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                Trading account segment activation
+              </p>
             </div>
             {photo ? (
               <div style={{ width: '135px', height: '175px', border: '2px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
@@ -205,13 +224,19 @@ const AccountOpeningForm = () => {
               <span style={valueStyle}>{formData.customerName || '-'}</span>
             </div>
 
-            {/* Row 2: Customer ID */}
-            <div style={itemStyle}>
-              <span style={labelStyle}>Customer ID :</span>
-              <span style={valueStyle}>{formData.customerId || '-'}</span>
+            {/* Row 2: Customer ID & Segment */}
+            <div style={rowStyle}>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Customer ID :</span>
+                <span style={valueStyle}>{formData.customerId || '-'}</span>
+              </div>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Segment :</span>
+                <span style={valueStyle}>{formData.segment}</span>
+              </div>
             </div>
 
-            {/* Row 3: Date of Birth (left) & Gender (right) */}
+            {/* Row 3: Date of Birth & Gender */}
             <div style={rowStyle}>
               <div style={colItemStyle}>
                 <span style={labelStyle}>Date of Birth :</span>
@@ -223,25 +248,31 @@ const AccountOpeningForm = () => {
               </div>
             </div>
 
-            {/* Row 4: Mobile Number */}
-            <div style={itemStyle}>
-              <span style={labelStyle}>Mobile Number :</span>
-              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXX{formData.mobileLast4.padStart(4, 'X')}</span>
+            {/* Row 4: Mobile Number & Initial Deposit */}
+            <div style={rowStyle}>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Mobile Number :</span>
+                <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXX{formData.mobileLast4 || 'XXXX'}</span>
+              </div>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Initial Deposit :</span>
+                <span style={valueStyle}>{formData.initialDeposit ? `₹ ${formData.initialDeposit}` : '-'}</span>
+              </div>
             </div>
 
-            {/* Row 5: Aadhaar Number */}
-            <div style={itemStyle}>
-              <span style={labelStyle}>Aadhaar Number :</span>
-              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>********{formData.aadhaarLast4.padStart(4, '*')}</span>
+            {/* Row 5: Aadhaar Number & PAN Card Number */}
+            <div style={rowStyle}>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>Aadhaar Number :</span>
+                <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXXXX{formData.aadhaarLast4 || 'XXXX'}</span>
+              </div>
+              <div style={colItemStyle}>
+                <span style={labelStyle}>PAN Card Number :</span>
+                <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXX{formData.panLast4.toUpperCase() || 'XXXX'}</span>
+              </div>
             </div>
 
-            {/* Row 6: PAN Card Number */}
-            <div style={itemStyle}>
-              <span style={labelStyle}>PAN Card Number :</span>
-              <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>******{formData.panLast4.padStart(4, '*')}</span>
-            </div>
-
-            {/* Row 7: Reference Name (left) & Date of Application (right) */}
+            {/* Row 6: Reference Name & Date of Application */}
             <div style={rowStyle}>
               <div style={colItemStyle}>
                 <span style={labelStyle}>Reference Name :</span>
@@ -252,52 +283,44 @@ const AccountOpeningForm = () => {
                 <span style={valueStyle}>{formData.applicationDate ? new Date(formData.applicationDate).toLocaleDateString('en-GB') : '-'}</span>
               </div>
             </div>
-
-            {/* Row 8: Initial Deposit */}
-            <div style={itemStyle}>
-              <span style={labelStyle}>Initial Deposit :</span>
-              <span style={{ ...valueStyle, fontSize: '20px', fontWeight: '700' }}>{formData.initialDeposit ? `₹ ${formData.initialDeposit}` : '-'}</span>
-            </div>
-
-
-          
           </div>
 
-         {/* Footer */}
+          {/* Footer */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '40px',
+              left: '40px',
+              right: '40px',
+              borderTop: '1px solid #cbd5e1',
+              paddingTop: "20px",
+              textAlign: "center"
+            }}
+          >
+            <div
+              style={{
+                color: "#dc2626",
+                fontSize: "14px",
+                fontWeight: "700",
+                lineHeight: "24px",
+              }}
+            >
+              <strong>Note:</strong> We are not registered with SEBI. High-leverage trading involves significant financial risk. Please trade at your own risk. The company shall not be responsible for any profit, loss, or financial consequences arising from your trading activities.
+            </div>
 
-<div
-  style={{
-    marginTop: "80px",
-    borderTop: "1px solid #d1d5db",
-    paddingTop: "20px",
-    textAlign: "center"
-  }}
->
-  <div
-    style={{
-      color: "#dc2626",
-      fontSize: "14px",
-      fontWeight: "700",
-      lineHeight: "24px",
-    }}
-  >
-    <strong>Note:</strong> We are not registered with SEBI. High-leverage trading involves significant financial risk. Please trade at your own risk. The company shall not be responsible for any profit, loss, or financial consequences arising from your trading activities.
-  </div>
-
-  <div
-    style={{
-      marginTop: "20px",
-      color: "#64748b",
-      fontSize: "12px",
-      fontWeight: "700",
-      letterSpacing: "2px",
-      textTransform: "uppercase"
-    }}
-  >
-    RADHE BROCKRAGE PVT. LTD.
-  </div>
-</div>
-          
+            <div
+              style={{
+                marginTop: "20px",
+                color: "#000000",
+                fontSize: "13px",
+                fontWeight: "900",
+                letterSpacing: "2px",
+                textTransform: "uppercase"
+              }}
+            >
+              RADHE BROCKRAGE PVT. LTD.
+            </div>
+          </div>
         </div>
           
       </div>

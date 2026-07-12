@@ -238,9 +238,9 @@ const Dashboard = () => {
               <span className="material-symbols-outlined text-rose-500 text-3xl">warning</span>
             </div>
             
-            <h3 className="text-xl font-bold text-white text-center mb-2">Delete Customer?</h3>
+            <h3 className="text-xl font-bold text-white text-center mb-2">Move to Recycle Bin?</h3>
             <p className="text-slate-400 text-sm text-center mb-6">
-              You are about to delete <span className="text-rose-400 font-semibold">{customerToDelete.name}</span>. This action cannot be undone. All associated data will be permanently removed.
+              You are about to delete <span className="text-rose-400 font-semibold">{customerToDelete.name}</span>. This customer will be moved to the Recycle Bin. Their trades and data will be safely preserved.
             </p>
             
             <div className="flex gap-3">
@@ -256,7 +256,7 @@ const Dashboard = () => {
                 disabled={isDeleting}
                 className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-3 rounded-xl transition-colors flex justify-center items-center gap-2 shadow-lg shadow-rose-600/30 disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? 'Moving...' : 'Move to Bin'}
               </button>
             </div>
           </div>
@@ -272,6 +272,9 @@ const Dashboard = () => {
           </svg>
         </div>
         <div className="flex gap-3 items-center">
+          <button onClick={() => navigate('/recycle-bin')} className="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
+            <span className="material-symbols-outlined text-[18px]">delete</span> Bin
+          </button>
           <button onClick={() => navigate('/account-opening')} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
             <span className="material-symbols-outlined text-[18px]">description</span> Form
           </button>

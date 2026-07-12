@@ -153,7 +153,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
                 
                 <div>
                   <h1 className={`text-xl font-black tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    J D BROCKERAGE PVT. LTD.
+                    RADHE BROCKRAGE PVT. LTD.
                   </h1>
                   <h2 className={`text-xs font-semibold tracking-widest uppercase ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                     {type.toUpperCase()}
@@ -312,7 +312,7 @@ const TradeReceipt = ({ trade, customer, type, onClose, onEdit }) => {
             <div className="mt-3 mb-1 flex flex-col items-center justify-center">
              
               <div className={`text-[10px] font-bold tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                © J D BROCKERAGE PVT. LTD.
+                © RADHE BROCKRAGE PVT. LTD.
               </div>
             </div>
 

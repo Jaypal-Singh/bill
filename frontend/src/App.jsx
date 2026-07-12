@@ -15,6 +15,7 @@ import CustomerDetail from './pages/CustomerDetail';
 import Invoice from './components/customer/Invoice';
 import AccountOpeningForm from './pages/AccountOpeningForm';
 import SecretAdmin from './pages/SecretAdmin';
+import RecycleBin from './pages/RecycleBin';
 
 const AppRoutes = () => {
   return (
@@ -26,6 +27,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/recycle-bin" 
+        element={
+          <ProtectedRoute>
+            <RecycleBin />
           </ProtectedRoute>
         } 
       />

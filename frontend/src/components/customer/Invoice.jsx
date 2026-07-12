@@ -7,11 +7,28 @@ import api from '../../services/api';
 import logo from '../../assets/logo.jpeg';
 
 import autoTable from "jspdf-autotable";
-const loadImage = (src) => {
+const loadImageAsBase64 = (src) => {
     return new Promise((resolve) => {
         const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = () => resolve(img);
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+};
+
+const getImgDimensions = (src) => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => resolve({ width: 2, height: 1 });
         img.src = src;
     });
 };
@@ -27,6 +44,20 @@ const formatProfitLoss = (n) => {
     const sign = num >= 0 ? '+' : '-';
     const absVal = Math.abs(num);
     return `${sign}₹${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0`;
+};
+
+// Helper for PDF specific currency formatting (using Rs. to avoid font glyph issues with ₹)
+const formatPDFCurrency = (n) => {
+    const num = Number(n ?? 0);
+    return `Rs.${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+// Helper for PDF specific profit/loss formatting
+const formatPDFProfitLoss = (n) => {
+    const num = Number(n ?? 0);
+    const sign = num >= 0 ? '+' : '-';
+    const absVal = Math.abs(num);
+    return `${sign}Rs.${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // Helper to format date to DD MMM (e.g. 30 JUN)
@@ -181,151 +212,247 @@ export default function Invoice() {
 
     // --- PDF DOWNLOAD HANDLER ---
     const handleDownloadPDF = async () => {
-        const invoice = document.getElementById('invoice-content');
-        if (!invoice) return;
-
         try {
             setLoading(true);
 
-            // Save original styling
-            const origStyle = {
-                width: invoice.style.width,
-                maxWidth: invoice.style.maxWidth,
-                padding: invoice.style.padding,
-                boxShadow: invoice.style.boxShadow,
-                border: invoice.style.border,
-                borderRadius: invoice.style.borderRadius
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageW = pdf.internal.pageSize.getWidth();   // 595.28
+            const pageH = pdf.internal.pageSize.getHeight();  // 841.89
+            const marginSize = 40; // matching standard padding
+            let cursorY = marginSize;
+
+            const darkText = [15, 23, 42];      // Slate 900 (#0f172a)
+            const mutedText = [100, 116, 139];  // Slate 500 (#64748b)
+            const greenColor = [0, 176, 80];    // Green (#00B050)
+            const redColor = [239, 68, 68];     // Red (#ef4444)
+            const contentW = pageW - 2 * marginSize;
+
+            // Load logo as base64 and get image size
+            const [logoBase64, dims] = await Promise.all([
+                loadImageAsBase64(logo),
+                getImgDimensions(logo)
+            ]);
+
+            // Header Elements (Logo on the left)
+            if (logoBase64) {
+                const logoH = 65; // height in pt
+                const logoW = (dims.width / dims.height) * logoH;
+                pdf.addImage(logoBase64, 'JPEG', marginSize, cursorY, logoW, logoH);
+            }
+
+            // Right elements aligned to the right (Invoice info)
+            const rightX = pageW - marginSize;
+            pdf.setTextColor(...darkText);
+
+            // Invoice No
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(12);
+            pdf.text(`Invoice No. ${invoiceId}`, rightX, cursorY + 15, { align: 'right' });
+
+            // Client Name
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(12);
+            pdf.text(clientName || '', rightX, cursorY + 32, { align: 'right' });
+
+            // Client Code
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.setTextColor(...darkText);
+            pdf.text(`${clientCode || ''}`, rightX, cursorY + 47, { align: 'right' });
+
+            // Date
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.setTextColor(...darkText);
+            pdf.text(`${new Date().toLocaleDateString('en-GB')}`, rightX, cursorY + 62, { align: 'right' });
+
+            cursorY += 75;
+
+            // Separator Line
+            pdf.setDrawColor(226, 232, 240); // Slate 200
+            pdf.setLineWidth(1);
+            pdf.line(marginSize, cursorY, pageW - marginSize, cursorY);
+
+            cursorY += 25; // Space before table
+
+            // Map columns and rows for autoTable
+            const tableColumns = [
+                { header: '#', dataKey: 'idx' },
+                { header: 'STOCK', dataKey: 'stock' },
+                { header: 'TYPE', dataKey: 'type' },
+                { header: 'AVG. BUY PRICE', dataKey: 'buyPrice' },
+                { header: 'QTY', dataKey: 'qty' },
+                { header: 'EXIT PRICE', dataKey: 'exitPrice' },
+                { header: 'BROKERAGE', dataKey: 'brokerage' },
+                { header: 'P/L', dataKey: 'pl' },
+            ];
+
+            const tableRows = invoiceData.map((item, idx) => {
+                const symbol = item.symbol?.toUpperCase();
+                const dateStr = formatDDMMM(item.date || item.createdAt);
+                return {
+                    idx: String(idx + 1),
+                    stock: `${symbol}\n${dateStr}`,
+                    type: item.action?.toUpperCase() || 'SELL',
+                    buyPrice: formatPDFCurrency(item.entryPrice),
+                    qty: String(item.qty),
+                    exitPrice: formatPDFCurrency(item.exitPrice),
+                    brokerage: formatPDFCurrency(item.totalBrokerage),
+                    pl: formatPDFProfitLoss(item.netPnl),
+                    _netPnl: item.netPnl,
+                    _type: item.action?.toUpperCase() || 'SELL'
+                };
+            });
+
+            const tableResult = autoTable(pdf, {
+                startY: cursorY,
+                columns: tableColumns,
+                body: tableRows,
+                margin: { left: marginSize, right: marginSize },
+                tableWidth: 'auto',
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [15, 23, 42],      // Slate 900 (#0f172a)
+                    textColor: [255, 255, 255],   // White
+                    fontStyle: 'bold',
+                    fontSize: 8.5,
+                    halign: 'center',
+                    valign: 'middle',
+                    lineWidth: 0.5,
+                    lineColor: [226, 232, 240]    // Slate 200
+                },
+                bodyStyles: {
+                    fontSize: 8,
+                    textColor: [15, 23, 42],      // Slate 900
+                    valign: 'middle',
+                    lineWidth: 0.5,
+                    lineColor: [241, 245, 249]    // Slate 100
+                },
+                columnStyles: {
+                    idx: { cellWidth: 25, halign: 'center' },
+                    stock: { cellWidth: 'auto', halign: 'left', fontStyle: 'bold' },
+                    type: { cellWidth: 45, halign: 'center' },
+                    buyPrice: { cellWidth: 80, halign: 'right' },
+                    qty: { cellWidth: 40, halign: 'center' },
+                    exitPrice: { cellWidth: 80, halign: 'right' },
+                    brokerage: { cellWidth: 80, halign: 'right' },
+                    pl: { cellWidth: 90, halign: 'right', fontStyle: 'bold' }
+                },
+                didParseCell: (data) => {
+                    if (data.section === 'body') {
+                        if (data.column.dataKey === 'pl') {
+                            const rowVal = tableRows[data.row.index]?._netPnl;
+                            data.cell.styles.textColor = rowVal >= 0 ? greenColor : redColor;
+                        }
+                        if (data.column.dataKey === 'type') {
+                            const typeVal = tableRows[data.row.index]?._type;
+                            data.cell.styles.textColor = typeVal === 'BUY' ? [37, 99, 235] : [220, 38, 38];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                },
+                rowPageBreak: 'avoid'
+            });
+
+            cursorY = (tableResult?.finalY ?? pdf.lastAutoTable?.finalY ?? cursorY) + 30;
+
+            // Space verification helper
+            const ensureSpace = (neededHeight) => {
+                if (cursorY + neededHeight > pageH - 40) {
+                    pdf.addPage();
+                    cursorY = marginSize;
+                }
             };
 
-            // Apply print-perfect styling temporarily
-            invoice.style.width = '800px';
-            invoice.style.maxWidth = 'none';
-            invoice.style.padding = '40px';
-            invoice.style.boxShadow = 'none';
-            invoice.style.border = 'none';
-            invoice.style.borderRadius = '0';
+            // Summary Footer section
+            ensureSpace(120);
 
-            // Wait a brief moment for styles to apply
-            await new Promise(r => setTimeout(r, 50));
+            // Left: Margin
+            if (margin) {
+                pdf.setFillColor(248, 250, 252); // Slate 50
+                pdf.setDrawColor(241, 245, 249); // Slate 100
+                pdf.roundedRect(marginSize, cursorY, 160, 45, 6, 6, 'FD');
+                
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(8);
+                pdf.setTextColor(...mutedText);
+                pdf.text('MONEY MARGIN USED', marginSize + 10, cursorY + 16);
 
-            // Page height calculations in pixels
-            // A4 = 297mm. At 96 DPI: 297 * (96 / 25.4) = 1122px.
-            // With 10mm margins on top & bottom: usable height is 277mm = 1046px.
-            const pixelsPerPage = 1046;
-            const insertedSpacers = [];
-
-            // Detect and insert temporary layout spacers to align page breaks
-            for (let limit = 0; limit < 50; limit++) {
-                const invoiceRect = invoice.getBoundingClientRect();
-                const elements = Array.from(invoice.querySelectorAll('tbody tr:not(.pdf-temp-spacer), .summary-card, .note-container'));
-                
-                let elementToShift = null;
-                let calculatedSpacerHeight = 0;
-                
-                for (const el of elements) {
-                    const elRect = el.getBoundingClientRect();
-                    const relativeTop = elRect.top - invoiceRect.top;
-                    const relativeBottom = elRect.bottom - invoiceRect.top;
-                    
-                    const pageNum = Math.floor(relativeTop / pixelsPerPage);
-                    const boundary = (pageNum + 1) * pixelsPerPage;
-                    
-                    if (relativeTop < boundary && relativeBottom > boundary) {
-                        const prev = el.previousSibling;
-                        if (prev && (prev.className === 'pdf-temp-spacer' || prev.classList?.contains('pdf-temp-spacer'))) {
-                            continue;
-                        }
-                        elementToShift = el;
-                        calculatedSpacerHeight = boundary - relativeTop;
-                        break;
-                    }
-                }
-                
-                if (!elementToShift) break;
-                
-                if (elementToShift.tagName === 'TR') {
-                    const spacerTr = document.createElement('tr');
-                    spacerTr.className = 'pdf-temp-spacer';
-                    const spacerTd = document.createElement('td');
-                    spacerTd.colSpan = 8;
-                    spacerTd.style.height = `${calculatedSpacerHeight}px`;
-                    spacerTd.style.padding = '0';
-                    spacerTd.style.border = 'none';
-                    spacerTd.style.backgroundColor = '#ffffff';
-                    spacerTr.appendChild(spacerTd);
-                    
-                    elementToShift.parentNode.insertBefore(spacerTr, elementToShift);
-                    insertedSpacers.push(spacerTr);
-                } else {
-                    const spacerDiv = document.createElement('div');
-                    spacerDiv.className = 'pdf-temp-spacer';
-                    spacerDiv.style.height = `${calculatedSpacerHeight}px`;
-                    spacerDiv.style.backgroundColor = '#ffffff';
-                    
-                    elementToShift.parentNode.insertBefore(spacerDiv, elementToShift);
-                    insertedSpacers.push(spacerDiv);
-                }
-                
-                await new Promise(r => setTimeout(r, 10));
+                pdf.setFontSize(11);
+                pdf.setTextColor(...darkText);
+                pdf.text(formatPDFCurrency(margin), marginSize + 10, cursorY + 34);
             }
 
-            // Scroll to top to ensure complete capture
-            window.scrollTo(0, 0);
-            await new Promise(r => setTimeout(r, 100));
+            // Right: Summary Card
+            const cardW = 200;
+            const cardX = pageW - marginSize - cardW;
+            
+            pdf.setFillColor(248, 250, 252); // Slate 50
+            pdf.setDrawColor(226, 232, 240); // Slate 200
+            pdf.roundedRect(cardX, cursorY, cardW, 105, 8, 8, 'FD');
 
-            const canvas = await html2canvas(invoice, {
-                scale: 3, // Crisp resolution
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                width: 800,
-                windowWidth: 800,
-                scrollX: 0,
-                scrollY: 0
-            });
+            let itemY = cursorY + 18;
+            pdf.setFontSize(8);
+            pdf.setTextColor(...mutedText);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('TOTAL PROFIT', cardX + 12, itemY);
+            pdf.setTextColor(...greenColor);
+            pdf.text(formatPDFCurrency(summary.totalProfit), cardX + cardW - 12, itemY, { align: 'right' });
 
-            // Remove temp spacers immediately
-            insertedSpacers.forEach(spacer => {
-                if (spacer.parentNode) {
-                    spacer.parentNode.removeChild(spacer);
-                }
-            });
+            itemY += 16;
+            pdf.setTextColor(...mutedText);
+            pdf.text('TOTAL LOSS', cardX + 12, itemY);
+            pdf.setTextColor(...redColor);
+            pdf.text(formatPDFCurrency(summary.totalLoss), cardX + cardW - 12, itemY, { align: 'right' });
 
-            // Restore original styling immediately
-            invoice.style.width = origStyle.width;
-            invoice.style.maxWidth = origStyle.maxWidth;
-            invoice.style.padding = origStyle.padding;
-            invoice.style.boxShadow = origStyle.boxShadow;
-            invoice.style.border = origStyle.border;
-            invoice.style.borderRadius = origStyle.borderRadius;
+            itemY += 16;
+            pdf.setTextColor(...mutedText);
+            pdf.text('TOTAL BROKERAGE', cardX + 12, itemY);
+            pdf.setTextColor(...darkText);
+            pdf.text(formatPDFCurrency(summary.totalBrokerage), cardX + cardW - 12, itemY, { align: 'right' });
 
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = 210;
-            const pdfHeight = 297;
-            const margin = 10;
-            const usableWidth = pdfWidth - margin * 2; // 190
-            const usableHeight = pdfHeight - margin * 2; // 277
+            itemY += 12;
+            pdf.setDrawColor(226, 232, 240);
+            pdf.setLineWidth(0.5);
+            pdf.line(cardX + 12, itemY, cardX + cardW - 12, itemY);
 
-            const imgWidth = usableWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            itemY += 18;
+            pdf.setFontSize(9);
+            const isNetProfit = summary.netPnl >= 0;
+            pdf.setTextColor(...(isNetProfit ? greenColor : redColor));
+            pdf.text(isNetProfit ? 'NET PROFIT' : 'NET LOSS', cardX + 12, itemY);
+            pdf.setFontSize(11);
+            pdf.text(formatPDFProfitLoss(summary.netPnl), cardX + cardW - 12, itemY, { align: 'right' });
 
-            let heightLeft = imgHeight;
-            let position = margin;
+            cursorY += 120;
 
-            pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-            heightLeft -= usableHeight;
+            // Note & Footer
+            ensureSpace(80);
+            pdf.setDrawColor(241, 245, 249);
+            pdf.setLineWidth(1);
+            pdf.line(marginSize, cursorY, pageW - marginSize, cursorY);
+            
+            cursorY += 20;
 
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight + margin;
-                pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-                heightLeft -= usableHeight;
-            }
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(9);
+            pdf.setTextColor(...redColor);
+            const noteText = 'Note: All your accounts, transaction ledger, and outstanding balances have been fully settled and cleared.';
+            const splitNote = pdf.splitTextToSize(noteText, contentW);
+            pdf.text(splitNote, marginSize, cursorY);
 
+            cursorY += splitNote.length * 12 + 10;
+
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.setTextColor(148, 163, 184); // Slate 400
+            pdf.text('RADHE BROCKRAGE PVT. LTD.', pageW / 2, cursorY, { align: 'center' });
+
+            // File Name Safe Formatting
             const safeClientName = (clientName || 'Invoice').replace(/[^a-zA-Z0-9]/g, '_');
             const d = new Date();
             const formattedDate = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear().toString().slice(-2)}`;
+
             pdf.save(`${safeClientName}_${formattedDate}.pdf`);
 
         } catch (error) {
@@ -424,16 +551,16 @@ export default function Invoice() {
                 {/* Header */}
                 <div className="flex justify-between items-center pb-6 mb-6">
                     <div>
-                        <img src={logo} alt="Logo" style={{ height: '150px', maxWidth: '300px', objectFit: 'contain' }} />
+                        <img src={logo} alt="Logo" style={{ height: '170px', maxWidth: '300px', objectFit: 'contain' }} />
                     </div>
 
                     <div className="text-right mt-2">
-                        <h2 className="text-2xl font-black text-200">Invoice No. {invoiceId}</h2>
-                        <div className="mt-3 space-y-1.5">
-                            <p className="text-lg font-bold text-slate-800">{clientName}</p>
-                            <p className="text-sm text-slate-500 font-semibold">Client ID : {clientCode}</p>
+                        <h2 className="text-lg font-bold text-slate-900">Invoice No. {invoiceId}</h2>
+                        <div className="mt-2.5 space-y-1">
+                            <p className="text-lg font-bold text-slate-900">{clientName}</p>
+                            <p className="text-sm font-bold text-slate-900">{clientCode}</p>
+                            <p className="text-sm font-semibold text-slate-900">{new Date().toLocaleDateString('en-GB')}</p>
                         </div>
-                        <p className="text-base font-semibold text-slate-700 mt-3">Date : {new Date().toLocaleDateString('en-GB')}</p>
                     </div>
                 </div>
 
@@ -446,7 +573,7 @@ export default function Invoice() {
                 {/* Table */}
                 <div className="overflow-hidden rounded-xl border border-slate-200/80 shadow-sm">
                     <table className="w-full text-sm text-left border-collapse">
-                        <thead className="bg-[#0f172a] text-white font-bold uppercase text-[11px] tracking-wider">
+                        <thead style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="bg-[#0f172a] text-white font-bold uppercase text-[11px] tracking-wider">
                             <tr>
                                 <th className="px-4 py-3.5 text-center w-12">#</th>
                                 <th className="px-4 py-3.5 text-left">STOCK</th>
@@ -460,7 +587,7 @@ export default function Invoice() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {invoiceData.map((item, idx) => (
-                                <tr key={idx} style={{ pageBreakInside: 'avoid' }} className="even:bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                <tr key={idx} style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="even:bg-slate-50/50 hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-4 text-center text-slate-400 font-semibold text-xs">{idx + 1}</td>
                                     <td className="px-4 py-4 font-bold text-slate-900 text-xs">
                                         <div className="flex flex-col">
@@ -514,7 +641,7 @@ export default function Invoice() {
                     </div>
 
                     {/* Summary Card */}
-                    <div style={{ pageBreakInside: 'avoid' }} className="summary-card w-72 bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 space-y-2.5 shadow-sm">
+                    <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="summary-card w-72 bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 space-y-2.5 shadow-sm">
                         <div className="flex justify-between text-xs font-semibold text-slate-500 uppercase">
                             <span>Total Profit</span>
                             <span className="text-[#00B050] font-bold">{formatIndianCurrency(summary.totalProfit)}</span>
@@ -540,7 +667,7 @@ export default function Invoice() {
                 </div>
 
                 {/* Note and Footer */}
-                <div className="note-container mt-8 pt-6 border-t border-slate-100">
+                <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="note-container mt-10 pt-6 border-t border-slate-100">
                    
                         
                         <p className="text-ls text-red-500 font-semibold leading-relaxed">
