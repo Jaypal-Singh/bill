@@ -85,6 +85,7 @@ export default function Invoice() {
     const [filterStats, setFilterStats] = useState({ total: 0, matched: 0, range: '' });
     const [clientName, setClientName] = useState('');
     const [clientCode, setClientCode] = useState('');
+    const [isClosedAccount, setIsClosedAccount] = useState(false);
 
     useEffect(() => {
         const fetchCustomer = async () => {
@@ -437,7 +438,9 @@ export default function Invoice() {
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(9);
             pdf.setTextColor(...redColor);
-            const noteText = 'Note: All your accounts, transaction ledger, and outstanding balances have been fully settled and cleared.';
+            const noteText = isClosedAccount 
+                ? 'Note: All your accounts, transaction ledger, and outstanding balances have been fully settled and cleared. Your account has been closed with Radhe Brokerage.'
+                : 'Note: All the trades you have taken are listed here. Holdings are not included.';
             const splitNote = pdf.splitTextToSize(noteText, contentW);
             pdf.text(splitNote, marginSize, cursorY);
 
@@ -512,6 +515,20 @@ export default function Invoice() {
                                 placeholder="Enter Margin Amount"
                                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             />
+                        </div>
+
+                        {/* Closed Account Note Checkbox */}
+                        <div className="flex items-center gap-2 pt-1">
+                            <input
+                                type="checkbox"
+                                id="closed-account-checkbox"
+                                checked={isClosedAccount}
+                                onChange={(e) => setIsClosedAccount(e.target.checked)}
+                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                            />
+                            <label htmlFor="closed-account-checkbox" className="text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                                Close account statement (settlement note)
+                            </label>
                         </div>
 
                         <button
@@ -670,8 +687,11 @@ export default function Invoice() {
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="note-container mt-10 pt-6 border-t border-slate-100">
                    
                         
-                        <p className="text-ls text-red-500 font-semibold leading-relaxed">
-                            Note: All your accounts, transaction ledger, and outstanding balances have been fully settled and cleared.
+                        <p className="text-sm text-red-500 font-bold leading-relaxed">
+                            {isClosedAccount 
+                                ? "Note: All your accounts, transaction ledger, and outstanding balances have been fully settled and cleared. Your account has been closed with Radhe Brokerage."
+                                : "Note: All the trades you have taken are listed here. Holdings are not included."
+                            }
                         </p>
                    
                     
