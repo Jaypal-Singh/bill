@@ -267,7 +267,7 @@ const AccountOpeningForm = () => {
                 <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXXXX{formData.aadhaarLast4 || 'XXXX'}</span>
               </div>
               <div style={colItemStyle}>
-                <span style={labelStyle}>PAN Card Number :</span>
+                <span style={labelStyle}>PAN Number :</span>
                 <span style={{ ...valueStyle, fontFamily: 'monospace', letterSpacing: '2px' }}>XXXXXX{formData.panLast4.toUpperCase() || 'XXXX'}</span>
               </div>
             </div>

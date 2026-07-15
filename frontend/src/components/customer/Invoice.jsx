@@ -49,7 +49,7 @@ const formatProfitLoss = (n) => {
 // Helper for PDF specific currency formatting (using Rs. to avoid font glyph issues with ₹)
 const formatPDFCurrency = (n) => {
     const num = Number(n ?? 0);
-    return `Rs.${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `Rs. ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // Helper for PDF specific profit/loss formatting
@@ -57,7 +57,7 @@ const formatPDFProfitLoss = (n) => {
     const num = Number(n ?? 0);
     const sign = num >= 0 ? '+' : '-';
     const absVal = Math.abs(num);
-    return `${sign}Rs.${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${sign}${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // Helper to format date to DD MMM (e.g. 30 JUN)
@@ -278,7 +278,7 @@ export default function Invoice() {
 
             // Map columns and rows for autoTable
             const tableColumns = [
-                { header: '#', dataKey: 'idx' },
+                { header: 'No.', dataKey: 'idx' },
                 { header: 'STOCK', dataKey: 'stock' },
                 { header: 'TYPE', dataKey: 'type' },
                 { header: 'AVG. BUY PRICE', dataKey: 'buyPrice' },
@@ -324,19 +324,20 @@ export default function Invoice() {
                 },
                 bodyStyles: {
                     fontSize: 8,
+                    fontStyle: 'bold',
                     textColor: [15, 23, 42],      // Slate 900
                     valign: 'middle',
                     lineWidth: 0.5,
                     lineColor: [241, 245, 249]    // Slate 100
                 },
                 columnStyles: {
-                    idx: { cellWidth: 25, halign: 'center' },
+                    idx: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
                     stock: { cellWidth: 'auto', halign: 'left', fontStyle: 'bold' },
-                    type: { cellWidth: 45, halign: 'center' },
-                    buyPrice: { cellWidth: 80, halign: 'right' },
-                    qty: { cellWidth: 40, halign: 'center' },
-                    exitPrice: { cellWidth: 80, halign: 'right' },
-                    brokerage: { cellWidth: 80, halign: 'right' },
+                    type: { cellWidth: 45, halign: 'center' , fontStyle: 'bold'},
+                    buyPrice: { cellWidth: 80, halign: 'right' , fontStyle: 'bold'},
+                    qty: { cellWidth: 40, halign: 'center' , fontStyle: 'bold'},
+                    exitPrice: { cellWidth: 80, halign: 'right', fontStyle: 'bold' },
+                    brokerage: { cellWidth: 80, halign: 'right', fontStyle: 'bold' },
                     pl: { cellWidth: 90, halign: 'right', fontStyle: 'bold' }
                 },
                 didParseCell: (data) => {
@@ -344,6 +345,7 @@ export default function Invoice() {
                         if (data.column.dataKey === 'pl') {
                             const rowVal = tableRows[data.row.index]?._netPnl;
                             data.cell.styles.textColor = rowVal >= 0 ? greenColor : redColor;
+                            data.cell.styles.fontStyle = 'bold';
                         }
                         if (data.column.dataKey === 'type') {
                             const typeVal = tableRows[data.row.index]?._type;
@@ -422,8 +424,11 @@ export default function Invoice() {
             const isNetProfit = summary.netPnl >= 0;
             pdf.setTextColor(...(isNetProfit ? greenColor : redColor));
             pdf.text(isNetProfit ? 'NET PROFIT' : 'NET LOSS', cardX + 12, itemY);
+            const netSign = summary.netPnl >= 0 ? '+' : '-';
+            const netAbsVal = Math.abs(summary.netPnl);
+            const netPnlStr = `${netSign}Rs. ${netAbsVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             pdf.setFontSize(11);
-            pdf.text(formatPDFProfitLoss(summary.netPnl), cardX + cardW - 12, itemY, { align: 'right' });
+            pdf.text(netPnlStr, cardX + cardW - 12, itemY, { align: 'right' });
 
             cursorY += 120;
 
@@ -592,7 +597,7 @@ export default function Invoice() {
                     <table className="w-full text-sm text-left border-collapse">
                         <thead style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }} className="bg-[#0f172a] text-white font-bold uppercase text-[11px] tracking-wider">
                             <tr>
-                                <th className="px-4 py-3.5 text-center w-12">#</th>
+                                <th className="px-4 py-3.5 text-center w-12">No.</th>
                                 <th className="px-4 py-3.5 text-left">STOCK</th>
                                 <th className="px-4 py-3.5 text-center w-20">TYPE</th>
                                 <th className="px-4 py-3.5 text-right">AVG. BUY PRICE</th>
