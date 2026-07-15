@@ -46,10 +46,31 @@ const formatProfitLoss = (n) => {
     return `${sign}₹${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0`;
 };
 
-// Helper for PDF specific currency formatting (using Rs. to avoid font glyph issues with ₹)
-const formatPDFCurrency = (n) => {
+// Helper to render ₹ symbol as a high-res image (PDF built-in fonts don't support ₹)
+const createRupeeImage = (hexColor, fontSizePt) => {
+    const scale = 8;
+    const sizePx = fontSizePt * 1.33;
+    const font = `bold ${Math.round(sizePx * scale)}px "Segoe UI", Arial, sans-serif`;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = font;
+    const metrics = ctx.measureText('₹');
+    const w = Math.ceil(metrics.width) + 2;
+    const h = Math.ceil(sizePx * scale * 1.1);
+    canvas.width = w;
+    canvas.height = h;
+    ctx.font = font;
+    ctx.fillStyle = hexColor;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('₹', 1, h * 0.75);
+    return { dataUrl: canvas.toDataURL('image/png'), w: w / scale, h: h / scale };
+};
+const rgbToHex = (rgb) => '#' + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
+
+// Helper to format raw number for PDF table (without currency symbol)
+const formatPDFNumber = (n) => {
     const num = Number(n ?? 0);
-    return `Rs. ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Helper for PDF specific profit/loss formatting
@@ -217,6 +238,10 @@ export default function Invoice() {
             setLoading(true);
 
             const pdf = new jsPDF('p', 'pt', 'a4');
+
+            const activeFont = 'helvetica';
+            pdf.setFont(activeFont, 'normal');
+
             const pageW = pdf.internal.pageSize.getWidth();   // 595.28
             const pageH = pdf.internal.pageSize.getHeight();  // 841.89
             const marginSize = 40; // matching standard padding
@@ -246,23 +271,23 @@ export default function Invoice() {
             pdf.setTextColor(...darkText);
 
             // Invoice No
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(12);
             pdf.text(`Invoice No. ${invoiceId}`, rightX, cursorY + 15, { align: 'right' });
 
             // Client Name
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(12);
             pdf.text(clientName || '', rightX, cursorY + 32, { align: 'right' });
 
             // Client Code
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(10);
             pdf.setTextColor(...darkText);
             pdf.text(`${clientCode || ''}`, rightX, cursorY + 47, { align: 'right' });
 
             // Date
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(10);
             pdf.setTextColor(...darkText);
             pdf.text(`${new Date().toLocaleDateString('en-GB')}`, rightX, cursorY + 62, { align: 'right' });
@@ -295,10 +320,10 @@ export default function Invoice() {
                     idx: String(idx + 1),
                     stock: `${symbol}\n${dateStr}`,
                     type: item.action?.toUpperCase() || 'SELL',
-                    buyPrice: formatPDFCurrency(item.entryPrice),
+                    buyPrice: formatPDFNumber(item.entryPrice),
                     qty: String(item.qty),
-                    exitPrice: formatPDFCurrency(item.exitPrice),
-                    brokerage: formatPDFCurrency(item.totalBrokerage),
+                    exitPrice: formatPDFNumber(item.exitPrice),
+                    brokerage: formatPDFNumber(item.totalBrokerage),
                     pl: formatPDFProfitLoss(item.netPnl),
                     _netPnl: item.netPnl,
                     _type: item.action?.toUpperCase() || 'SELL'
@@ -312,6 +337,7 @@ export default function Invoice() {
                 margin: { left: marginSize, right: marginSize },
                 tableWidth: 'auto',
                 theme: 'grid',
+                styles: { font: activeFont },
                 headStyles: {
                     fillColor: [15, 23, 42],      // Slate 900 (#0f172a)
                     textColor: [255, 255, 255],   // White
@@ -370,20 +396,30 @@ export default function Invoice() {
             // Summary Footer section
             ensureSpace(120);
 
+            // Pre-render ₹ images for each color/size
+            const rupeeSmGreen = createRupeeImage(rgbToHex(greenColor), 6);
+            const rupeeSmRed = createRupeeImage(rgbToHex(redColor), 6);
+            const rupeeSmDark = createRupeeImage(rgbToHex(darkText), 6);
+            const rupeeLgDark = createRupeeImage(rgbToHex(darkText), 8);
+
             // Left: Margin
             if (margin) {
                 pdf.setFillColor(248, 250, 252); // Slate 50
                 pdf.setDrawColor(241, 245, 249); // Slate 100
                 pdf.roundedRect(marginSize, cursorY, 160, 45, 6, 6, 'FD');
                 
-                pdf.setFont('helvetica', 'bold');
+                pdf.setFont(activeFont, 'bold');
                 pdf.setFontSize(8);
                 pdf.setTextColor(...mutedText);
                 pdf.text('MONEY MARGIN USED', marginSize + 10, cursorY + 16);
 
                 pdf.setFontSize(11);
                 pdf.setTextColor(...darkText);
-                pdf.text(formatPDFCurrency(margin), marginSize + 10, cursorY + 34);
+                const marginVal = formatPDFNumber(margin);
+                const mX = marginSize + 10;
+                const mY = cursorY + 34;
+                pdf.addImage(rupeeLgDark.dataUrl, 'PNG', mX, mY - rupeeLgDark.h * 0.72, rupeeLgDark.w, rupeeLgDark.h);
+                pdf.text(marginVal, mX + rupeeLgDark.w + 1, mY);
             }
 
             // Right: Summary Card
@@ -394,25 +430,36 @@ export default function Invoice() {
             pdf.setDrawColor(226, 232, 240); // Slate 200
             pdf.roundedRect(cardX, cursorY, cardW, 105, 8, 8, 'FD');
 
+            const rightEdge = cardX + cardW - 12;
+
             let itemY = cursorY + 18;
             pdf.setFontSize(8);
             pdf.setTextColor(...mutedText);
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.text('TOTAL PROFIT', cardX + 12, itemY);
             pdf.setTextColor(...greenColor);
-            pdf.text(formatPDFCurrency(summary.totalProfit), cardX + cardW - 12, itemY, { align: 'right' });
+            const profitVal = formatPDFNumber(summary.totalProfit);
+            const profitW = pdf.getTextWidth(profitVal);
+            pdf.addImage(rupeeSmGreen.dataUrl, 'PNG', rightEdge - profitW - rupeeSmGreen.w - 2, itemY - rupeeSmGreen.h * 0.72, rupeeSmGreen.w, rupeeSmGreen.h);
+            pdf.text(profitVal, rightEdge, itemY, { align: 'right' });
 
             itemY += 16;
             pdf.setTextColor(...mutedText);
             pdf.text('TOTAL LOSS', cardX + 12, itemY);
             pdf.setTextColor(...redColor);
-            pdf.text(formatPDFCurrency(summary.totalLoss), cardX + cardW - 12, itemY, { align: 'right' });
+            const lossVal = formatPDFNumber(summary.totalLoss);
+            const lossW = pdf.getTextWidth(lossVal);
+            pdf.addImage(rupeeSmRed.dataUrl, 'PNG', rightEdge - lossW - rupeeSmRed.w - 2, itemY - rupeeSmRed.h * 0.72, rupeeSmRed.w, rupeeSmRed.h);
+            pdf.text(lossVal, rightEdge, itemY, { align: 'right' });
 
             itemY += 16;
             pdf.setTextColor(...mutedText);
             pdf.text('TOTAL BROKERAGE', cardX + 12, itemY);
             pdf.setTextColor(...darkText);
-            pdf.text(formatPDFCurrency(summary.totalBrokerage), cardX + cardW - 12, itemY, { align: 'right' });
+            const brokVal = formatPDFNumber(summary.totalBrokerage);
+            const brokW = pdf.getTextWidth(brokVal);
+            pdf.addImage(rupeeSmDark.dataUrl, 'PNG', rightEdge - brokW - rupeeSmDark.w - 2, itemY - rupeeSmDark.h * 0.72, rupeeSmDark.w, rupeeSmDark.h);
+            pdf.text(brokVal, rightEdge, itemY, { align: 'right' });
 
             itemY += 12;
             pdf.setDrawColor(226, 232, 240);
@@ -422,13 +469,21 @@ export default function Invoice() {
             itemY += 18;
             pdf.setFontSize(9);
             const isNetProfit = summary.netPnl >= 0;
-            pdf.setTextColor(...(isNetProfit ? greenColor : redColor));
+            const netColor = isNetProfit ? greenColor : redColor;
+            pdf.setTextColor(...netColor);
             pdf.text(isNetProfit ? 'NET PROFIT' : 'NET LOSS', cardX + 12, itemY);
-            const netSign = summary.netPnl >= 0 ? '+' : '-';
+            const netSign = isNetProfit ? '+' : '-';
             const netAbsVal = Math.abs(summary.netPnl);
-            const netPnlStr = `${netSign}Rs. ${netAbsVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const netValStr = netAbsVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             pdf.setFontSize(11);
-            pdf.text(netPnlStr, cardX + cardW - 12, itemY, { align: 'right' });
+            const netValW = pdf.getTextWidth(netValStr);
+            const rupeeLgNet = createRupeeImage(rgbToHex(netColor), 8);
+            const netSignW = pdf.getTextWidth(netSign);
+            const totalNetW = netSignW + 2 + rupeeLgNet.w + 1 + netValW;
+            const netStartX = rightEdge - totalNetW;
+            pdf.text(netSign, netStartX, itemY);
+            pdf.addImage(rupeeLgNet.dataUrl, 'PNG', netStartX + netSignW + 2, itemY - rupeeLgNet.h * 0.72, rupeeLgNet.w, rupeeLgNet.h);
+            pdf.text(netValStr, rightEdge, itemY, { align: 'right' });
 
             cursorY += 120;
 
@@ -440,7 +495,7 @@ export default function Invoice() {
             
             cursorY += 20;
 
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(9);
             pdf.setTextColor(...redColor);
             const noteText = isClosedAccount 
@@ -451,7 +506,7 @@ export default function Invoice() {
 
             cursorY += splitNote.length * 12 + 10;
 
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFont(activeFont, 'bold');
             pdf.setFontSize(10);
             pdf.setTextColor(148, 163, 184); // Slate 400
             pdf.text('RADHE BROCKRAGE PVT. LTD.', pageW / 2, cursorY, { align: 'center' });
